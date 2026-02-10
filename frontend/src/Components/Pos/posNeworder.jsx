@@ -35,9 +35,9 @@ import { useReactToPrint } from 'react-to-print';
 import PrintComponent from "./print/posPrint";
 import PosCancelOrder from "./neworder/posCancelOrders";
 const PosNewOrder = () => {
- 
 
-  
+
+
 //  const navigate = useNavigate();
   const [tabEnabled, setTabEnabled] = useState({
     dineIn: false,
@@ -48,20 +48,20 @@ const PosNewOrder = () => {
   const [addedby, setuserid] = useState("");
   const [shiftstoken, setShiftstoken] = useState('');
   const [shiftAccess, setShiftAccess] = useState('');
- 
+
  // setOpentoken(dit);
- // const dit = shiftAccess.shiftacess; 
+ // const dit = shiftAccess.shiftacess;
 
   const { id } = useParams();
   useEffect(() => {
     const storeid = localStorage.getItem("_id");
     const storetoken = localStorage.getItem('shifttoken');
     const storeaccess = localStorage.getItem('shiftacess');
-  
+
     setuserid(storeid);
     setShiftstoken(storetoken);
-    
-   
+
+
 
 
   }, []);
@@ -89,7 +89,7 @@ const PosNewOrder = () => {
 
     fetchData();
   }, []);
-  
+
 //console.log();
 
 
@@ -144,6 +144,10 @@ const PosNewOrder = () => {
   const [isModalInvoiceReport, setModalInvoiceReport] = useState(false);
   const [isModalClosingBalance,setModalClosingBalance] =useState(false);
   const [isModalCanelOrders,setModalCancelOrders] =useState(false);
+
+
+  const [loadingPlaceOrder, setLoadingPlaceOrder] = useState(false);
+const [loadingQuickPay, setLoadingQuickPay] = useState(false);
 
   const [activeTabletab, setactiveTableTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -454,115 +458,157 @@ const PosNewOrder = () => {
 
 
   const [response, setResponse] = useState(null);
-  const handlePlaceorder = async (event) => {
-    event.preventDefault();
+const handlePlaceorder = async (event) => {
+  event.preventDefault();
 
-    setLoading(true);
-
-    setTimeout(() => {
-      if (!selectWaiter) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Waiter is Empty',
-          text: 'Please add items to your cart before placing an order.',
-        });
-      } else if (cart.length < 1) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Cart is empty',
-          text: 'Please add items to your cart before placing an order.',
-        });
-      } else if (!options) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Options not selected',
-          text: 'Please select options before placing an order.',
-        });}
-        else
-        {
-          setPlaceOrder({
-            option: options,
-            waiter: selectWaiter,
-            customer: selectCustomer,
-            table: selectTable,
-            cart: cart,
-            total: totalAmount,
-            vat: vatAmount,
-            grandTotal: grandTotal,
-            delivery: selectDelivery,
-            numberofperson: numberofperson,
-          });
-
-          var posData = new FormData();
-          if (selectCustomer && selectCustomer._id) { posData.append('customers', selectCustomer._id); }
-          if (selectDelivery && selectDelivery._id) { posData.append("delivery", selectDelivery._id);  }
-          posData.append('options', options);
-          posData.append('grandTotal', grandTotal);
-          for (let i = 0; i < cart.length; i++) {
-            posData.append(`cart[${i}].foodmenuId`, cart[i]._id);
-            posData.append(`cart[${i}].foodmenuname`, cart[i].foodmenuname);
-            posData.append(`cart[${i}].salesprice`, cart[i].salesprice);
-            posData.append(`cart[${i}].quantity`, cart[i].quantity);
-          }
-          posData.append('vatAmount', vatAmount);
-          posData.append('total', totalAmount);
-          posData.append('foodoption', options);
-          posData.append('addedby', addedby);
-          posData.append('opentoken',shiftAccess);
-          if (selectTable && selectTable._id) {
-            posData.append('tableId', selectTable._id);
-            posData.append('numberofperson', numberofperson);
-          }
-          if (selectWaiter && selectWaiter._id) {
-            posData.append('waiterId', selectWaiter._id);
-          }
-
-          const config = { headers: { 'Content-Type': 'application/json' } };
-
-          axios
-          .post(`${apiConfig.baseURL}/api/pos/createpos`, posData, config)
-          .then((res) => {
-            // Display success message and prompt for printing
-            Swal.fire({
-              title: 'Success!',
-              text: 'Do you want to print the order?',
-              icon: 'success',
-              showCancelButton: true,
-              confirmButtonText: 'Yes, print',
-              cancelButtonText: 'No',
-            }).then((result) => {
-              if (result.isConfirmed) {
-                // printQuickDetails(res.data.newEntry, res.data.updatedDocuments);
-                printOrderDetails(res.data);
-                setCart([]);
-                setTabEnabled({
-                  dineIn: true,
-                });
-              } else {
-             window.location.reload();
-              }
-            });
-          })
-          .catch((err) => {
-            console.error('Quick pay error:', err);
-            Swal.fire({
-              icon: 'error',
-              title: 'Quick Pay Error',
-              text: 'An error occurred during quick pay.',
-            });
-          })
-          .finally(() => {
-            // Hide loading state regardless of success or error
-            setLoading(false);
-          });
-
-      
-        }
-
-    }, 1000);
-
-
+  // Validate first
+  if (!selectWaiter) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Waiter is Empty',
+      text: 'Please select a waiter before placing an order.',
+    });
+    return;
+  } else if (cart.length < 1) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Cart is empty',
+      text: 'Please add items to your cart before placing an order.',
+    });
+    return;
+  } else if (!options) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Options not selected',
+      text: 'Please select options before placing an order.',
+    });
+    return;
   }
+
+  // Set loading state
+  setLoadingPlaceOrder(true);
+
+  try {
+    // Prepare order data
+    var posData = new FormData();
+    if (selectCustomer && selectCustomer._id) {
+      posData.append('customers', selectCustomer._id);
+    }
+    if (selectDelivery && selectDelivery._id) {
+      posData.append("delivery", selectDelivery._id);
+    }
+    posData.append('options', options);
+    posData.append('grandTotal', grandTotal);
+
+    for (let i = 0; i < cart.length; i++) {
+      posData.append(`cart[${i}].foodmenuId`, cart[i]._id);
+      posData.append(`cart[${i}].foodmenuname`, cart[i].foodmenuname);
+      posData.append(`cart[${i}].salesprice`, cart[i].salesprice);
+      posData.append(`cart[${i}].quantity`, cart[i].quantity);
+    }
+
+    posData.append('vatAmount', vatAmount);
+    posData.append('total', totalAmount);
+    posData.append('foodoption', options);
+    posData.append('addedby', addedby);
+    posData.append('opentoken', shiftAccess);
+
+    if (selectTable && selectTable._id) {
+      posData.append('tableId', selectTable._id);
+      posData.append('numberofperson', numberofperson);
+    }
+
+    if (selectWaiter && selectWaiter._id) {
+      posData.append('waiterId', selectWaiter._id);
+    }
+
+    const config = { headers: { 'Content-Type': 'application/json' } };
+
+    const response = await axios.post(
+      `${apiConfig.baseURL}/api/pos/createpos`,
+      posData,
+      config
+    );
+
+    // Ask if user wants to print
+    Swal.fire({
+      title: 'Order Placed Successfully!',
+      text: 'Do you want to print the receipt?',
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, show print preview',
+      cancelButtonText: 'No, continue',
+      showCloseButton: true,
+      focusConfirm: false,
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Set order data and show print preview modal
+        setOrderData(response.data);
+        setShowPrintModal(true);
+
+        // Clear cart and reset states
+        setCart([]);
+        setTotalAmount(0);
+        setTotalVat(0);
+        setGrandTotal(0);
+
+        // Reset tabs
+        setSelectWaiter("");
+        setSelectCustomer("");
+        setSelectDelivery("");
+        setSelectTable("");
+        setOptions("");
+        setNumberofPerson("");
+        setTabEnabled({
+          dineIn: false,
+          takeaway: false,
+          delivery: false,
+        });
+        setEnableDinein(false);
+        setShowCustomerTab(false);
+        setShowFoodMenuTab(false);
+        setShowDeliveryTab(false);
+
+      } else {
+        // User clicked "No, continue"
+        // Clear cart and reset states
+        setCart([]);
+        setTotalAmount(0);
+        setTotalVat(0);
+        setGrandTotal(0);
+
+        // Reset tabs
+        setSelectWaiter("");
+        setSelectCustomer("");
+        setSelectDelivery("");
+        setSelectTable("");
+        setOptions("");
+        setNumberofPerson("");
+        setTabEnabled({
+          dineIn: false,
+          takeaway: false,
+          delivery: false,
+        });
+        setEnableDinein(false);
+        setShowCustomerTab(false);
+        setShowFoodMenuTab(false);
+        setShowDeliveryTab(false);
+      }
+    });
+
+  } catch (error) {
+    console.error('Error placing order:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Order Error',
+      text: 'An error occurred while placing the order.',
+    });
+  } finally {
+    // Always reset loading state
+    setLoadingPlaceOrder(false);
+  }
+};
 
   const imagePaths = "/assets/images/pos/taha.png";
 
@@ -577,7 +623,7 @@ const PosNewOrder = () => {
         table {
           width: 100%;
           border-collapse: collapse;
-         
+
         }
         th, td {
           border: 1px solid #ddd;
@@ -599,16 +645,16 @@ const PosNewOrder = () => {
       </style>
     `);
     printWindow.document.write('</head><body>');
-    
+
     // Include order details and image in the print window
-    
+
     printWindow.document.write(`<img src="${imagePaths}" alt="Logo" style="max-width: 100%;" onload="window.print(); location.reload();">`);
     printWindow.document.write(`<p>Order ID: ${orderData.ordernumber}</p>`);
     const orderDate = new Date(orderData.date);
 const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
 printWindow.document.write(`<p>Date: ${formattedDate}</p>`);
-   
-    
+
+
 if (orderData.cart && orderData.cart.length > 0) {
   printWindow.document.write(`
     <table>
@@ -621,7 +667,7 @@ if (orderData.cart && orderData.cart.length > 0) {
       </thead>
       <tbody>
   `);
-  
+
   let subtotal = 0;
 
   orderData.cart.forEach((item) => {
@@ -644,7 +690,7 @@ if (orderData.cart && orderData.cart.length > 0) {
   const subTotals = subtotal - vatAmounts;
 
   printWindow.document.write('</tbody></table>');
-  
+
   printWindow.document.write(`<p>VAT Amount: ${vatAmounts}</p>`);
   printWindow.document.write(`<p>Subtotal: ${subTotals}</p>`);
   printWindow.document.write(`<p>Overall Total: ${subtotal}</p>`);
@@ -659,20 +705,20 @@ printWindow.document.write('</body></html>');
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
   });
-  
+
 
   // const componentRef = React.useRef();
 
   const handleClosePrint = () => {
       setShowPrintModal(false);
-      
+
     }
 
     const handlePrints = useReactToPrint({
       content: () => componentRef.current,
     });
 
-  
+
 
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [orderData,setOrderData ] = useState(null);
@@ -683,8 +729,8 @@ printWindow.document.write('</body></html>');
     if (orderData) {
       setShowPrintModal(true);
     }
-  }, [orderData]); 
- 
+  }, [orderData]);
+
 
 
 
@@ -774,111 +820,167 @@ printWindow.document.write('</body></html>');
 
 
 
-  const handleQuickPay = (event) => {
-    event.preventDefault();
-    setLoading(true);
-  
-    // Introduce a delay before executing the main logic
-    setTimeout(() => {
-      if (cart.length < 1) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Cart is empty',
-          text: 'Please add items to your cart before placing an order.',
-        });
-      } else if (!options) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Options not selected',
-          text: 'Please select options before placing an order.',
-        });
-      } else if (options.toLowerCase() === 'dine in') {
-        Swal.fire({
-          icon: 'error',
-          title: 'Dine-In Not Allowed',
-          text: 'Quick pay is not allowed for dine-in orders.',
-        });
-      } else {
-        
-        setPlaceOrder({
-          option: options,
-          waiter: selectWaiter,
-          customer: selectCustomer,
-          table: selectTable,
-          cart: cart,
-          total: totalAmount,
-          vat: vatAmount,
-          grandTotal: grandTotal,
-          delivery: selectDelivery,
-          numberofperson: numberofperson,
-        });
-       // console.log(options);
-  
-        var posData = new FormData();
-  
-        if (selectCustomer && selectCustomer._id) {
-          posData.append("customers", selectCustomer._id);
-        }
-        if (selectDelivery && selectDelivery._id) {
-          posData.append("delivery", selectDelivery._id);
-        }
-        posData.append("options", options);
-        posData.append("grandTotal", grandTotal);
-        for (let i = 0; i < cart.length; i++) {
-          posData.append(`cart[${i}].foodmenuId`, cart[i]._id);
-          posData.append(`cart[${i}].foodmenuname`, cart[i].foodmenuname);
-          posData.append(`cart[${i}].salesprice`, cart[i].salesprice);
-          posData.append(`cart[${i}].quantity`, cart[i].quantity);
-        }
-        posData.append("vatAmount", vatAmount);
-        posData.append("total", totalAmount);
-        posData.append("foodoption", options);
-        if (selectTable && selectTable._id) {
-          posData.append("tableId", selectTable._id);
-        }
-        if (selectWaiter && selectWaiter._id) {
-          posData.append("waiterId", selectWaiter._id);
-        }
-        posData.append('addedby', addedby);
-        posData.append('shiftstoken','shiftstoken');
-        posData.append('opentoken',shiftAccess);
-        const config = { headers: { "Content-Type": "application/json" } };
+const handleQuickPay = (event) => {
+  event.preventDefault();
 
-        axios
-          .post(`${apiConfig.baseURL}/api/pos/createQuickpay`, posData, config)
-          .then((res) => {
-            // Display success message and prompt for printing
-            Swal.fire({
-              title: 'Success!',
-              text: 'Do you want to print the order?',
-              icon: 'success',
-              showCancelButton: true,
-              confirmButtonText: 'Yes, print',
-              cancelButtonText: 'No',
-            }).then((result) => {
-              if (result.isConfirmed) {
-                printQuickDetails(res.data.newEntry, res.data.updatedDocuments);
-              } else {
-             window.location.reload();
-              }
-            });
-          })
-          .catch((err) => {
-            console.error('Quick pay error:', err);
-            Swal.fire({
-              icon: 'error',
-              title: 'Quick Pay Error',
-              text: 'An error occurred during quick pay.',
-            });
-          })
-          .finally(() => {
-            // Hide loading state regardless of success or error
-            setLoading(false);
+  // Validate first
+  if (cart.length < 1) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Cart is empty',
+      text: 'Please add items to your cart before placing an order.',
+    });
+    return;
+  } else if (!options) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Options not selected',
+      text: 'Please select options before placing an order.',
+    });
+    return;
+  } else if (options.toLowerCase() === 'dine in') {
+    Swal.fire({
+      icon: 'error',
+      title: 'Dine-In Not Allowed',
+      text: 'Quick pay is not allowed for dine-in orders.',
+    });
+    return;
+  }
+
+  // Set loading state
+  setLoadingQuickPay(true);
+
+  var posData = new FormData();
+
+  if (selectCustomer && selectCustomer._id) {
+    posData.append("customers", selectCustomer._id);
+  }
+  if (selectDelivery && selectDelivery._id) {
+    posData.append("delivery", selectDelivery._id);
+  }
+  posData.append("options", options);
+  posData.append("grandTotal", grandTotal);
+
+  for (let i = 0; i < cart.length; i++) {
+    posData.append(`cart[${i}].foodmenuId`, cart[i]._id);
+    posData.append(`cart[${i}].foodmenuname`, cart[i].foodmenuname);
+    posData.append(`cart[${i}].salesprice`, cart[i].salesprice);
+    posData.append(`cart[${i}].quantity`, cart[i].quantity);
+  }
+
+  posData.append("vatAmount", vatAmount);
+  posData.append("total", totalAmount);
+  posData.append("foodoption", options);
+
+  if (selectTable && selectTable._id) {
+    posData.append("tableId", selectTable._id);
+  }
+
+  if (selectWaiter && selectWaiter._id) {
+    posData.append("waiterId", selectWaiter._id);
+  }
+
+  posData.append('addedby', addedby);
+  posData.append('shiftstoken', shiftstoken);
+  posData.append('opentoken', shiftAccess);
+
+  const config = { headers: { "Content-Type": "application/json" } };
+
+  axios
+    .post(`${apiConfig.baseURL}/api/pos/createQuickpay`, posData, config)
+    .then((res) => {
+      // Ask if user wants to print
+      Swal.fire({
+        title: 'Quick Pay Successful!',
+        text: 'Do you want to print the receipt?',
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, show print preview',
+        cancelButtonText: 'No, continue',
+        showCloseButton: true,
+        focusConfirm: false,
+        allowOutsideClick: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Prepare order data for print preview
+          const orderData = {
+            ordernumber: res.data.newEntry.ordernumber,
+            billnumber: res.data.updatedDocuments.billnumber,
+            cart: res.data.newEntry.cart,
+            total: res.data.newEntry.total,
+            vatAmount: res.data.newEntry.vatAmount,
+            grandTotal: res.data.newEntry.grandTotal,
+            date: res.data.newEntry.date,
+            options: options
+          };
+
+          // Set order data and show print preview modal
+          setOrderData(orderData);
+          setShowPrintModal(true);
+
+          // Clear cart and reset states
+          setCart([]);
+          setTotalAmount(0);
+          setTotalVat(0);
+          setGrandTotal(0);
+
+          // Reset tabs
+          setSelectWaiter("");
+          setSelectCustomer("");
+          setSelectDelivery("");
+          setSelectTable("");
+          setOptions("");
+          setNumberofPerson("");
+          setTabEnabled({
+            dineIn: false,
+            takeaway: false,
+            delivery: false,
           });
-      }
-    }, 1000); // You can adjust the delay time (in milliseconds) as needed
-  };
-  
+          setEnableDinein(false);
+          setShowCustomerTab(false);
+          setShowFoodMenuTab(false);
+          setShowDeliveryTab(false);
+
+        } else {
+          // User clicked "No, continue"
+          // Clear cart and reset states
+          setCart([]);
+          setTotalAmount(0);
+          setTotalVat(0);
+          setGrandTotal(0);
+
+          // Reset tabs
+          setSelectWaiter("");
+          setSelectCustomer("");
+          setSelectDelivery("");
+          setSelectTable("");
+          setOptions("");
+          setNumberofPerson("");
+          setTabEnabled({
+            dineIn: false,
+            takeaway: false,
+            delivery: false,
+          });
+          setEnableDinein(false);
+          setShowCustomerTab(false);
+          setShowFoodMenuTab(false);
+          setShowDeliveryTab(false);
+        }
+      });
+    })
+    .catch((err) => {
+      console.error('Quick pay error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Quick Pay Error',
+        text: 'An error occurred during quick pay.',
+      });
+    })
+    .finally(() => {
+      setLoadingQuickPay(false);
+    });
+};
+
 
   const printComponentRef = useRef();
   const handlequickPrint = useReactToPrint({
@@ -888,7 +990,7 @@ printWindow.document.write('</body></html>');
   const printQuickDetails = (newEntry, updatedDocuments) => {
     const printWindow = window;
     printWindow.document.write('<html><head><title>Order Details</title>');
-    
+
     // Add style for center alignment and table styling
     printWindow.document.write(`
       <style>
@@ -915,19 +1017,19 @@ printWindow.document.write('</body></html>');
         }
       </style>
     `);
-  
+
     printWindow.document.write('</head><body>');
-    
+
     // Include order details and image in the print window
     printWindow.document.write(`<img src="${imagePaths}" alt="Logo" style="max-width: 100%;" onload="window.print(); location.reload();">`);
     printWindow.document.write(`<p>Bill Number: ${updatedDocuments.billnumber}</p>`);
     printWindow.document.write(`<p>Order ID: ${newEntry.ordernumber}</p>`);
-    
+
     const orderDate = new Date(newEntry.date);
     const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
     const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
     printWindow.document.write(`<p>Date and Time: ${formattedDate} ${formattedTime}</p>`);
-    
+
     // Print details of each item in the cart in a table
     if (newEntry.cart && newEntry.cart.length > 0) {
       printWindow.document.write(`
@@ -941,13 +1043,13 @@ printWindow.document.write('</body></html>');
           </thead>
           <tbody>
       `);
-      
+
       let subtotal = 0;
-  
+
       newEntry.cart.forEach((item) => {
         const totalPrice = item.quantity * item.salesprice;
         subtotal += totalPrice;
-  
+
         printWindow.document.write(`
           <tr>
             <td>${item.foodmenuname}</td>
@@ -956,23 +1058,23 @@ printWindow.document.write('</body></html>');
           </tr>
         `);
       });
-  
+
       // Calculate VAT amount and overall total
       const vatPercentValue = 5;
       const vatAmounts = (subtotal * vatPercentValue) / 100;
       const overallTotal = subtotal + vatAmount;
       const subTotals = subtotal - vatAmounts;
-  
+
       printWindow.document.write('</tbody></table>');
-      
+
       printWindow.document.write(`<p>VAT Amount: ${vatAmounts}</p>`);
       printWindow.document.write(`<p>Subtotal: ${subTotals}</p>`);
       printWindow.document.write(`<p>Overall Total: ${subtotal}</p>`);
     }
-  
+
     printWindow.document.write('</body></html>');
   };
-  
+
   const handleTabClick = () => {
     setModalOpen(true);
   };
@@ -1071,7 +1173,7 @@ printWindow.document.write('</body></html>');
             <table className="table">
               <tr>
                 <td>Total </td>
-                <th className="text-right">${totalAmount}</th>
+                <th className="text-right">{totalAmount}</th>
               </tr>
               <tr>
                 <td>Discount </td>
@@ -1079,7 +1181,7 @@ printWindow.document.write('</body></html>');
               </tr>
               <tr>
                 <td>VAT </td>
-                <th className="text-right">${vatAmount}</th>
+                <th className="text-right">{vatAmount}</th>
               </tr>
               <tr>
                 <th>Grand Total </th>
@@ -1099,16 +1201,17 @@ printWindow.document.write('</body></html>');
                 Cancel
               </button>
             </div>
-            <div className="col-lg-6 pl-0">
-  <button
-    type="button"
-    onClick={handlePlaceorder}
-    className="btn btn-warning w-100 mb-2 p-2"
-    disabled={loading} // Disable the button when loading
-  >
-    {loading ? 'Placing Order...' : 'Place Order'}
-  </button>
-</div>
+
+  <div className="col-lg-6 pl-0">
+    <button
+      type="button"
+      onClick={handlePlaceorder}
+      className="btn btn-warning w-100 mb-2 p-2"
+      disabled={loadingPlaceOrder} // Only disable when Place Order is processing
+    >
+      {loadingPlaceOrder ? 'Placing Order...' : 'Place Order'}
+    </button>
+  </div>
 
             <div className="col-lg-6">
               <button
@@ -1119,16 +1222,16 @@ printWindow.document.write('</body></html>');
                 Hold
               </button>
             </div>
-            <div className="col-lg-6 pl-0">
-  <button
-    type="button"
-    onClick={handleQuickPay}
-    className="btn btn-success w-100 mb-2 p-2"
-    disabled={loading} // Disable the button when loading
-  >
-    {loading ? 'Loading...' : 'Quick Pay'}
-  </button>
-</div>
+ <div className="col-lg-6 pl-0">
+    <button
+      type="button"
+      onClick={handleQuickPay}
+      className="btn btn-success w-100 mb-2 p-2"
+      disabled={loadingQuickPay} // Only disable when Quick Pay is processing
+    >
+      {loadingQuickPay ? 'Processing...' : 'Quick Pay'}
+    </button>
+  </div>
           </div>
         </div>
       </div>
@@ -1302,7 +1405,7 @@ printWindow.document.write('</body></html>');
               enableDinein && ( <li className="nav-item">
                 <a className="nav-link pos "  onClick={() => {
                 // handleDinein();
-                setSelectTable(''); 
+                setSelectTable('');
               }} data-toggle="tab" href="#table" role="tab" aria-controls="duck2" aria-selected="true"><SiTablecheck className="mr-2" />Table</a>
               </li>
            ) } */}
@@ -1390,7 +1493,7 @@ printWindow.document.write('</body></html>');
           </ul>
         </div>
         <div className="tab-content mt-3" style={{ maxHeight: '800px', overflowY: 'scroll' }}>
-        
+
           <div
             className="tab-pane active"
             id="waiter"
@@ -1428,9 +1531,9 @@ printWindow.document.write('</body></html>');
               ))}
             </div>
 
-         
-        
-            
+
+
+
             {/* } */}
           </div>
           {/* <div className="tab-pane " id="table" role="tabpanel" aria-labelledby="duck-tab">
@@ -1667,7 +1770,7 @@ printWindow.document.write('</body></html>');
                       <MdDeliveryDining className="mr-2" />
                       <br />
                       {delivery.firstname}{delivery.lastname}
-                      
+
                     </h6>
                   </div>
                 </div>
@@ -1749,7 +1852,7 @@ printWindow.document.write('</body></html>');
         </ul>
       </div>
     </div>
-    
+
               </div>
 
               <div className="tab-content p-3" id="myTabContents">
@@ -1842,71 +1945,219 @@ printWindow.document.write('</body></html>');
         setModalInvoiceReport={setModalInvoiceReport}
       />
 
-    <PosClosingBalance 
-      isModalClosingBalance={isModalClosingBalance}  
+    <PosClosingBalance
+      isModalClosingBalance={isModalClosingBalance}
       setModalClosingBalance={setModalClosingBalance}
     />
 
-    <PosCancelOrder 
+    <PosCancelOrder
     isModalCanelOrders={isModalCanelOrders}
     setModalCancelOrders={setModalCancelOrders}
     />
 
 
-    
+
 
 
 
 {/* <PrintComponent ref={componentRef} response={response} /> */}
 
-    {/* <PosOrderPrint 
-     orderData={orderData} 
-      showPrintModal={showPrintModal} 
-      setShowPrintModal={setShowPrintModal} 
-     
+    {/* <PosOrderPrint
+     orderData={orderData}
+      showPrintModal={showPrintModal}
+      setShowPrintModal={setShowPrintModal}
+
     /> */}
             <div>
-        <div className={`modal ${showPrintModal ? 'show' : ''}`} tabIndex="-1" role="dialog" style={{ display: showPrintModal ? 'block' : 'none' }}>
-          <div className="modal-dialog modal-md" role="document" style={{ maxWidth: '1200px' }}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Pos Closing Balance</h5>
-                <button type="button" className="close" onClick={handleClosePrint}>
-                  <span>&times;</span>
-                </button>
+{/* Print Preview Modal */}
+{/* Print Preview Modal */}
+{/* Print Preview Modal */}
+{showPrintModal && (
+  <>
+    <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
+      <div className="modal-dialog modal-lg" role="document">
+        <div className="modal-content">
+          <div className="modal-header bg-primary text-white">
+            <h5 className="modal-title">
+              <i className="fas fa-print mr-2"></i>
+              Print Preview
+            </h5>
+            <button
+              type="button"
+              className="close text-white"
+              onClick={() => setShowPrintModal(false)}
+            >
+              <span>&times;</span>
+            </button>
+          </div>
+          <div className="modal-body p-4" ref={componentRef}>
+            {/* Print Preview Content */}
+            <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '300px', margin: '0 auto' }}>
+              {/* Restaurant Header */}
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>RESTAURANT NAME</h3>
+                <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 1</p>
+                <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 2</p>
+                <p style={{ margin: '0', fontSize: '12px' }}>Phone: +1234567890</p>
+                <hr style={{ margin: '10px 0', borderColor: '#000' }} />
               </div>
-              <div className="modal-body" ref={componentRef}>
 
-  
-  
-              {
-  Array.isArray(orderData) &&
-  orderData.map((order) => (
-    <React.Fragment key={order?.ordernumber}>
-      <h2>Ordernumber: {order?.ordernumber}</h2>
-      <h4>Options: {order?.options}</h4>
-      <table className="table table-border">
-        {/* ... (rest of the table rendering code) */}
-      </table>
-      <h6 className="text-right">Total: {order?.total}</h6>
-      <h6 className="text-right">Vat Amount: {order?.vatAmount}</h6>
-      <h6 className="text-right">Grand Total: {order?.grandTotal}</h6>
-    </React.Fragment>
-  ))
-}
-  
-  
-  
+              {/* Order Details */}
+              <div style={{ marginBottom: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Order No:</span>
+                  <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
+                </div>
+                {orderData?.billnumber && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span>Bill No:</span>
+                    <span style={{ fontWeight: 'bold' }}>{orderData.billnumber}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Date:</span>
+                  <span>{new Date(orderData?.date || Date.now()).toLocaleDateString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Time:</span>
+                  <span>{new Date(orderData?.date || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Type:</span>
+                  <span>{orderData?.options || 'N/A'}</span>
+                </div>
+                <hr style={{ margin: '10px 0', borderColor: '#000' }} />
               </div>
-              <div className="modal-footer">
-              <button onClick={handlePrints}>Print</button>
-          
+
+              {/* Items Table */}
+              <div style={{ marginBottom: '15px' }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1fr 1fr',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  marginBottom: '5px',
+                  borderBottom: '1px solid #000',
+                  paddingBottom: '5px'
+                }}>
+                  <div>ITEM</div>
+                  <div style={{ textAlign: 'center' }}>QTY</div>
+                  <div style={{ textAlign: 'right' }}>AMOUNT</div>
+                </div>
+
+                {orderData?.cart?.map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr',
+                      fontSize: '12px',
+                      marginBottom: '3px'
+                    }}
+                  >
+                    <div style={{ wordBreak: 'break-word' }}>{item.foodmenuname}</div>
+                    <div style={{ textAlign: 'center' }}>{item.quantity}</div>
+                    <div style={{ textAlign: 'right' }}>{(item.quantity * item.salesprice).toFixed(2)}</div>
+                  </div>
+                ))}
+
+                <hr style={{ margin: '10px 0', borderColor: '#000' }} />
               </div>
-  
+
+              {/* Totals Calculation */}
+              <div style={{ fontSize: '12px' }}>
+                {(() => {
+                  // Calculate subtotal from cart
+                  const subtotal = orderData?.cart?.reduce((sum, item) =>
+                    sum + (item.quantity * item.salesprice), 0) || 0;
+
+                  // Calculate VAT using your exact formula
+                  const vatPercentValue = 5;
+                  const vatAmounts = (subtotal * vatPercentValue) / 100;
+
+                  // Calculate overall total
+                   const fixedsubtotal = subtotal - vatAmounts;
+
+                  const overallTotal = fixedsubtotal + vatAmounts;
+
+                  return (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span>Sub Total:</span>
+                        <span>{fixedsubtotal.toFixed(2)}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span>VAT Amount:</span>
+                        <span>{vatAmounts.toFixed(2)}</span>
+                      </div>
+
+                      {/* Optional: Show VAT percentage */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '10px',
+                        fontSize: '11px',
+                        color: '#666',
+                        fontStyle: 'italic'
+                      }}>
+                        <span>(VAT @ {vatPercentValue}%):</span>
+                        <span>{(subtotal * vatPercentValue / 100).toFixed(2)}</span>
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        marginTop: '10px',
+                        paddingTop: '5px',
+                        borderTop: '2px solid #000'
+                      }}>
+                        <span>Overall Total:</span>
+                        <span>{overallTotal.toFixed(2)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Footer */}
+              <div style={{
+                textAlign: 'center',
+                marginTop: '20px',
+                fontSize: '11px',
+                borderTop: '1px dashed #000',
+                paddingTop: '10px'
+              }}>
+                <p style={{ margin: '5px 0' }}>Thank you for dining with us!</p>
+                <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Please visit again</p>
+                <p style={{ margin: '5px 0' }}>*** Have a nice day ***</p>
+              </div>
             </div>
           </div>
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowPrintModal(false)}
+            >
+              <i className="fas fa-times mr-1"></i> Close
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handlePrints}
+            >
+              <i className="fas fa-print mr-1"></i> Print Receipt
+            </button>
+          </div>
         </div>
-        <div className={`modal-backdrop ${showPrintModal ? 'show' : ''}`} style={{ display: showPrintModal ? 'block' : 'none' }}></div>
+      </div>
+    </div>
+    <div className="modal-backdrop fade show"></div>
+  </>
+)}
       </div>
 
     </div>

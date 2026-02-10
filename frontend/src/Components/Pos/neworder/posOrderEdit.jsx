@@ -3,10 +3,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { IoFastFoodSharp } from "react-icons/io5";
-import 'react-toastify/dist/ReactToastify.css'; // Import the styles for react-toastify
+import 'react-toastify/dist/ReactToastify.css';
 import apiConfig from '../../layouts/base_url';
 import Swal from 'sweetalert2';
 import { useReactToPrint } from 'react-to-print';
+
 const PosOrderEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -21,74 +22,57 @@ const PosOrderEdit = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [menu, setMenu] = useState([]);
   const [placeorder, setPlaceOrder] = useState({});
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printData, setPrintData] = useState(null);
+  const [originalOrderData, setOriginalOrderData] = useState(null);
+
+  const printRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: `Updated_Order_${printData?.orderNumber || 'Order'}`,
+    onAfterPrint: () => {
+      setShowPrintModal(false);
+      navigate('/pos');
+    }
+  });
+
+  // Fetch original order data
   useEffect(() => {
     axios.get(`${apiConfig.baseURL}/api/pos/getEdit/${id}`)
       .then((response) => {
         const data = response.data[0];
+        console.info({ reponsedata: data });
 
-        console.info({reponsedata: data})
+        // Save the original order data
+        setOriginalOrderData(data);
 
         if (data && data.cart && Array.isArray(data.cart)) {
           setCart(data.cart);
 
+          // Calculate initial totals from original cart
+          let initialTotal = 0;
+          let initialVat = 0;
+
           data.cart.forEach(item => {
-            console.log("Food Item: " + item.foodmenuname);
-            console.log("Quantity: " + item.quantity);
-            console.log("Sales Price: " + item.salesprice);
-            console.log("--------------");
+            initialTotal += parseFloat(item.salesprice) * parseInt(item.quantity);
           });
+
+          initialVat = (initialTotal * 5) / 100;
+
+          setTotalAmount(initialTotal);
+          setTotalVat(initialVat);
+          setGrandTotal(initialTotal + initialVat);
         } else {
           console.log("Cart data is not available or is in an unexpected format.");
         }
-
-        if (data && data.vatAmount) {
-          console.log(data.vatAmount);
-        
-        } else {
-          console.log("VAT amount not found in the data.");
-        }
-
-        if (data && data.total) {
-          console.log(data.total);
-        
-        } else {
-          console.log("Total amount not found in the data.");
-        }
-
-        if (data && data.grandTotal) {
-          console.log(data.grandTotal);
-          
-        } else {
-          console.log("Grand total not found in the data.");
-        }
-        // setTotalVat(data.vatAmount);
-        // setTotalAmount(data.total);
-        // setGrandTotal(data.grandTotal);
-       
-
-      if (data && data.vatAmount) {
-     console.log();
-       setTotalVat(data.vatAmount);
-      } else {
-      console.log("VAT amount not found in the data.");
-    }
-
-       console.log(response.data);
-        const foodmenuIds = orderData.map(order => (
-          order.cart.map(item => item.menuItemDetails._id)
-        )).flat();
-
-      
-        setMenu(foodmenuIds);
-       
       })
       .catch((error) => {
         console.error(error);
       });
   }, [id]);
 
-  console.info({grandTotal, totalAmount})
-
+  // Fetch food categories
   useEffect(() => {
     axios.get(`${apiConfig.baseURL}/api/pos/posfood`)
       .then((response) => {
@@ -99,41 +83,44 @@ const PosOrderEdit = () => {
       });
   }, []);
 
+  // Calculate totals when cart changes
+  useEffect(() => {
+    let newTotalAmount = 0;
+    let newVatAmount = 0;
+
+    cart.forEach(icart => {
+      newTotalAmount += parseInt(icart.quantity) * parseInt(icart.salesprice);
+    });
+
+    newVatAmount = (newTotalAmount * 5) / 100;
+
+    setTotalAmount(newTotalAmount);
+    setTotalVat(newVatAmount);
+    setGrandTotal(newTotalAmount + newVatAmount);
+  }, [cart]);
+
+  // Handle search
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
+  // Add product to cart
   const addProductToCart = (menu) => {
-    console.info({menu})
     let findProductInCart = cart.find(i => i.foodmenuId === menu._id);
     let newCart = [];
 
     if (findProductInCart) {
-      let newItem;
-
       cart.forEach(cartItem => {
         if (cartItem.foodmenuId === menu._id) {
-          newItem = {
+          newCart.push({
             ...cartItem,
             quantity: parseInt(cartItem.quantity) + 1,
-          }
-          newCart.push(newItem);
+          });
         } else {
           newCart.push(cartItem);
         }
       });
-
       setCart(newCart);
-
-      // Trigger toast for adding to cart
-      toast(`Added ${menu.foodmenuname} to the cart`, {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-      });
-
     } else {
       let addingProduct = {
         ...menu,
@@ -141,344 +128,341 @@ const PosOrderEdit = () => {
         'quantity': 1,
         'totalAmount': menu.salesprice,
       }
-
       setCart([...cart, addingProduct]);
-
-      // Trigger toast for adding to cart
-      toast(`Added ${menu.foodmenuname} to the cart`, {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-      });
     }
+
+    toast(`Added ${menu.foodmenuname} to the cart`, {
+      position: 'top-right',
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+    });
   }
 
-  const removeProduct = async (menu) => {
-    console.info({menu})
+  // Remove product from cart
+  const removeProduct = (menu) => {
     const newCart = cart.filter(cartItem => cartItem.foodmenuId !== menu.foodmenuId);
     setCart(newCart);
   }
-console.info({cart})
-  useEffect(() => {
-    let newTotalAmount = 0;
-    // let newVatAmount = 0;
 
-    // cart.forEach(icart => {
-    //   newTotalAmount = newTotalAmount + icart.quantity * parseInt(icart.totalAmount);
-    //   newVatAmount = parseInt(icart.vat.percentage) !== 0 ? newVatAmount + icart.quantity * parseInt(icart.salesprice) * (parseInt(icart.vat.percentage) / 100) : newVatAmount;
-    // })
-    let newVatAmount = 0;
-
-cart.forEach(icart => {
-  if (icart.vat && typeof icart.vat.percentage !== 'undefined') {
-    newTotalAmount = totalAmount + icart.quantity * parseInt(icart.salesprice);
-    newVatAmount = parseInt(icart.vat.percentage) !== 0 ? newVatAmount + icart.quantity * parseInt(icart.salesprice) * (parseInt(icart.vat.percentage) / 100) : vatAmount;
-  } else {
-    newTotalAmount = newTotalAmount + parseInt(icart.quantity) * parseInt(icart.salesprice);
-  }
-});
-
-    setTotalAmount(newTotalAmount);
-    setTotalVat(newVatAmount);
-    setGrandTotal((newTotalAmount + newVatAmount));
-  }, [cart])
-
+  // Increment quantity
   const handleIncrement = (prod) => {
-    console.info({prod})
-    const { foodmenuId } = prod;
-    let addQuantity = cart.map(item => {
+    const addQuantity = cart.map(item => {
       if (item.foodmenuId === prod.foodmenuId) {
-        item.quantity = parseInt(item.quantity) + 1;
+        return {
+          ...item,
+          quantity: parseInt(item.quantity) + 1
+        };
       }
       return item;
-    })
+    });
     setCart(addQuantity);
   }
 
+  // Decrement quantity
   const handleDecrement = (prod) => {
-    const { foodmenuId } = prod;
-    let addQuantity = cart.map(item => {
-      if (item.foodmenuId === foodmenuId) {
-        item.quantity = parseInt(item.quantity) > 1 ? parseInt(item.quantity) - 1 : 1;
+    const addQuantity = cart.map(item => {
+      if (item.foodmenuId === prod.foodmenuId) {
+        return {
+          ...item,
+          quantity: parseInt(item.quantity) > 1 ? parseInt(item.quantity) - 1 : 1
+        };
       }
       return item;
-    })
+    });
     setCart(addQuantity);
   }
 
-  const handlePlaceorder =() =>
-  {
-    setPlaceOrder({
-    
-      cart: cart,
-      total: totalAmount,
-      vat: vatAmount,
-      grandTotal: grandTotal,
-    
-    
-    })
+  // Calculate differences between original and updated cart
+  const calculateCartDifferences = () => {
+    if (!originalOrderData?.cart || !cart) return [];
 
-    
-    var posData = new FormData();
-    for (let i = 0; i < cart.length; i++) {
-    //  posData.append(`cart[${i}].foodmenuId`, cart[i]._id);
-      posData.append(`cart[${i}].salesprice`, cart[i].salesprice);
-      posData.append(`cart[${i}].quantity`, cart[i].quantity);
-      posData.append(
-        `cart[${i}].foodmenuname`,
-       cart[i].foodmenuname
-      );
-    
-      if ('foodmenuId' in cart[i]) {
-        posData.append(`cart[${i}].foodmenuId`, cart[i].foodmenuId);
+    const originalCart = originalOrderData.cart;
+    const differences = [];
+
+    // Create maps for comparison
+    const originalMap = new Map();
+    originalCart.forEach(item => {
+      originalMap.set(item.foodmenuId || item._id, {
+        quantity: parseInt(item.quantity),
+        salesprice: parseFloat(item.salesprice),
+        foodmenuname: item.foodmenuname
+      });
+    });
+
+    const currentMap = new Map();
+    cart.forEach(item => {
+      currentMap.set(item.foodmenuId, {
+        quantity: parseInt(item.quantity),
+        salesprice: parseFloat(item.salesprice),
+        foodmenuname: item.foodmenuname
+      });
+    });
+
+    // Check for changed or new items
+    cart.forEach(currentItem => {
+      const originalItem = originalMap.get(currentItem.foodmenuId);
+
+      if (!originalItem) {
+        // New item added
+        differences.push({
+          foodmenuname: currentItem.foodmenuname,
+          quantity: parseInt(currentItem.quantity),
+          salesprice: parseFloat(currentItem.salesprice),
+          changeType: 'added',
+          amount: parseInt(currentItem.quantity) * parseFloat(currentItem.salesprice)
+        });
+      } else if (originalItem.quantity !== parseInt(currentItem.quantity)) {
+        // Quantity changed
+        const quantityDiff = parseInt(currentItem.quantity) - originalItem.quantity;
+        differences.push({
+          foodmenuname: currentItem.foodmenuname,
+          quantity: quantityDiff,
+          salesprice: parseFloat(currentItem.salesprice),
+          changeType: quantityDiff > 0 ? 'increased' : 'decreased',
+          amount: Math.abs(quantityDiff) * parseFloat(currentItem.salesprice)
+        });
       }
- 
+    });
+
+    // Check for removed items
+    originalCart.forEach(originalItem => {
+      const itemId = originalItem.foodmenuId || originalItem._id;
+      const currentItem = currentMap.get(itemId);
+      if (!currentItem) {
+        differences.push({
+          foodmenuname: originalItem.foodmenuname,
+          quantity: -parseInt(originalItem.quantity),
+          salesprice: parseFloat(originalItem.salesprice),
+          changeType: 'removed',
+          amount: parseInt(originalItem.quantity) * parseFloat(originalItem.salesprice)
+        });
+      }
+    });
+
+    return differences;
+  }
+
+  // Handle update order
+  const handleUpdateOrder = async () => {
+    if (cart.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Empty Cart',
+        text: 'Please add items to cart before updating order.'
+      });
+      return;
     }
- posData.append("vatAmount",vatAmount);
- posData.append("total",totalAmount);
- posData.append("grandTotal",grandTotal);
-  
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
+
+    try {
+      // Prepare form data
+      const formData = new FormData();
+
+      // Add cart items
+      cart.forEach((item, index) => {
+        formData.append(`cart[${index}].foodmenuId`, item.foodmenuId);
+        formData.append(`cart[${index}].foodmenuname`, item.foodmenuname);
+        formData.append(`cart[${index}].salesprice`, item.salesprice);
+        formData.append(`cart[${index}].quantity`, item.quantity);
+      });
+
+      // Add totals
+      formData.append('vatAmount', vatAmount.toFixed(2));
+      formData.append('total', totalAmount.toFixed(2));
+      formData.append('grandTotal', grandTotal.toFixed(2));
+
+      // API call
+      const response = await axios.put(
+        `${apiConfig.baseURL}/api/pos/updatepos/${id}`,
+        formData,
+        {
+          headers: { 'Content-Type': 'application/json' }
         }
+      );
+
+      // Calculate differences for print
+      const differences = calculateCartDifferences();
+
+      // Calculate update totals
+      let updateSubtotal = 0;
+      differences.forEach(item => {
+        updateSubtotal += item.amount;
+      });
+
+      const updateVat = (updateSubtotal * 5) / 100;
+      const updateGrandTotal = updateSubtotal + updateVat;
+
+      // Prepare print data
+      const printData = {
+        orderNumber: response.data.updatePos?.ordernumber || originalOrderData?.ordernumber || 'N/A',
+        date: response.data.updatePos?.updatedAt || new Date(),
+        changes: differences,
+        updateSubtotal: updateSubtotal,
+        updateVat: updateVat,
+        updateGrandTotal: updateGrandTotal,
+        finalSubtotal: totalAmount,
+        finalVat: vatAmount,
+        finalGrandTotal: grandTotal,
+        updateType: 'ORDER UPDATE'
       };
 
-      axios
-       .put(`${apiConfig.baseURL}/api/pos/updatepos/${id}`, posData, config)
-        // .then(res => {
-        //    console.log(res);
-        //    navigate('/posorder');
-        //  })
-        //  .catch(err => console.log(err));
-        .then(res => {
-          Swal.fire({
-            title: 'Success!',
-            text: 'Do you want to print the order?',
-            icon: 'success',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, print',
-            cancelButtonText: 'No',
-          }).then((result) => {
+      setPrintData(printData);
 
-            console.log(res.data.existingEntry)
+      // Show success message with changes summary
+      const changesHtml = differences.length > 0
+        ? `
+          <div class="text-left">
+            <p><strong>Summary of Changes:</strong></p>
+            <ul class="text-left pl-3">
+              ${differences.map(item =>
+                `<li>${item.foodmenuname}:
+                  ${item.changeType === 'added' ? 'Added' :
+                    item.changeType === 'removed' ? 'Removed' :
+                    item.changeType === 'increased' ? `Increased by ${item.quantity}` :
+                    `Decreased by ${Math.abs(item.quantity)}`}
+                </li>`
+              ).join('')}
+            </ul>
+            <p class="mt-2">Would you like to print the update receipt?</p>
+          </div>
+        `
+        : '<p>No changes detected. Would you like to print the receipt?</p>';
 
-      printOrderDetails(res.data.differences,res.data.updatePos);
-         navigate('/pos');
-          });
-        })
-        .catch(err => console.log(err));
+      const result = await Swal.fire({
+        title: 'Order Updated!',
+        html: changesHtml,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Print Receipt',
+        cancelButtonText: 'No, Return to POS',
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        reverseButtons: true
+      });
+
+      if (result.isConfirmed) {
+        setShowPrintModal(true);
+      } else {
+        navigate('/pos');
+      }
+
+    } catch (error) {
+      console.error('Update error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Update Failed',
+        text: 'Failed to update order. Please try again.'
+      });
     }
-
-     // console.log(posData);
-     const imagePaths = "/assets/images/pos/taha.png";
-
-     const printOrderDetails = (differences,updatePos) => {
-
-      const printWindow = window;
-    printWindow.document.write('<html><head><title>Order Details</title>');
-    // Add style for center alignment and table styling
-    printWindow.document.write(`
-      <style>
-        body { text-align: center; }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-         
-        }
-        th, td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-        th {
-          background-color: #f2f2f2;
-        }
-        td
-        {
-          font-size:13px;
-          text-transform: capitalize;
-        }
-        .order-info {
-          font-size:13px;
-          text-transform: capitalize;
-        }
-      </style>
-    `);
-    printWindow.document.write('</head><body>');
-    
-    // Include order details and image in the print window
-    
-    printWindow.document.write(`<img src="${imagePaths}" alt="Logo" style="max-width: 100%;" onload="window.print(); location.reload();">`);
-   
-    if (updatePos) {
-      printWindow.document.write(`<p>Order ID: ${updatePos.ordernumber}</p>`);
-      const orderDate = new Date(updatePos.updatedAt);
-      const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
-      const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
-      printWindow.document.write(`<p>Date and Time: ${formattedDate} ${formattedTime}</p>`);
-    }
-   
-    
-if (differences && differences.length > 0) {
-  
-  printWindow.document.write(`
-    <table>
-      <thead>
-        <tr>
-          <th>Food Name</th>
-          <th>Qty</th>
-          <th>Total Price</th>
-        </tr>
-      </thead>
-      <tbody>
-  `);
-  
-  let subtotal = 0;
-  let subTotals = 0;
-  let vatAmounts = 0;
-
-  differences.forEach(item => {
-    if (item.quantity !== 0) {
-
-      const totalPrice = item.quantity * item.salesprice;
-      subtotal += totalPrice;
-      vatAmounts =(subtotal * 5)/100;
-      subTotals = subtotal-vatAmounts;
-
-
-     
-    printWindow.document.write(`
-    <tr>
-    <td>${item.foodmenuname}</td>
-    <td>${item.quantity}</td>
-    <td>${totalPrice}</td>
-</tr>
-    `);
-
-    
-
-    
-
-    }
-  });
-  printWindow.document.write('</tbody></table>');
-   
-    printWindow.document.write(`<p>Subtotal: ${subTotals}</p>`);
-    printWindow.document.write(`<p>VAT Amount: ${vatAmounts}</p>`);
-    printWindow.document.write(`<p>Overall Total: ${subtotal}</p>`);
-
- 
-
-
- 
-}
-
-
-
-printWindow.document.write('</body></html>');
-
   };
-  
-  
-    const componentRef = useRef(null);
-  
-    // Use the hook to enable printing
-    const handlePrint = useReactToPrint({
-      content: () => componentRef.current,
+
+  // Handle cancel
+  const handleCancel = () => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'All changes will be lost.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Cancel',
+      cancelButtonText: 'No, Keep Editing'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigate('/pos');
+      }
     });
-  
-  
-
-
+  };
 
   return (
     <div className="row">
-           <div className="col-sm-4 col-lg-auto">
-        <div className="wraper shdw">
+      <ToastContainer />
 
+      {/* Left Panel - Cart Summary */}
+      <div className="col-sm-4 col-lg-auto">
+        <div className="wraper shdw">
           <div className="table-responsive vh-70" style={{ height: "300px", overflowY: "scroll" }}>
-            <table className="table ">
+            <table className="table">
               <thead>
                 <tr className="thead-light">
-                  <th >No.</th>
+                  <th>No.</th>
                   <th>Name</th>
-                  <th >U.Price</th>
-                  <th >Qty</th>
-
-                  {/* <th scope="col">Total</th> */}
+                  <th>U.Price</th>
+                  <th>Qty</th>
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody >
-                {cart ? cart.map((cartProduct, key) => <tr key={key}>
-                  {/* <td>{cartProduct._id}</td> */}
-                  <td>{key + 1}</td>
-                  <td>{cartProduct.foodmenuname}</td>
-                  <td>{cartProduct.salesprice}</td>
-                  <td><button className='btn btn-danger btn-sm cartminus' onClick={() => handleDecrement(cartProduct)}>-</button><input type="text" style={{ width: '20px' }} value={cartProduct.quantity} /><button className='btn btn-success btn-sm cartplus' onClick={() => handleIncrement(cartProduct)}>+</button></td>
-
-                  {/* <td>{cartProduct.totalAmount}</td> */}
-                  <td>
-                    <button className='btn btn-danger btn-sm' onClick={() => removeProduct(cartProduct)}>x</button>
-                  </td>
-
-                </tr>)
-
-                  : 'No Item in Cart'}
-
-
+              <tbody>
+                {cart.length > 0 ? cart.map((cartProduct, key) => (
+                  <tr key={key}>
+                    <td>{key + 1}</td>
+                    <td>{cartProduct.foodmenuname}</td>
+                    <td>${cartProduct.salesprice}</td>
+                    <td>
+                      <button className='btn btn-danger btn-sm cartminus' onClick={() => handleDecrement(cartProduct)}>-</button>
+                      <input type="text" style={{ width: '20px' }} value={cartProduct.quantity} readOnly />
+                      <button className='btn btn-success btn-sm cartplus' onClick={() => handleIncrement(cartProduct)}>+</button>
+                    </td>
+                    <td>
+                      <button className='btn btn-danger btn-sm' onClick={() => removeProduct(cartProduct)}>x</button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="5" className="text-center">No Item in Cart</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
 
+          {/* Totals Section */}
           <div className="table-responsive">
             <table className="table">
               <tr>
-                <td>Total </td>
-                <th className="text-right">${totalAmount}</th>
+                <td>Subtotal</td>
+                <th className="text-right">${totalAmount.toFixed(2)}</th>
               </tr>
               <tr>
-                <td >Discount  </td>
-                <th className="text-right"></th>
+                <td>VAT (5%)</td>
+                <th className="text-right">${vatAmount.toFixed(2)}</th>
               </tr>
               <tr>
-                <td>VAT </td>
-                <th className="text-right">${vatAmount}</th>
-              </tr>
-              <tr>
-                <th>Grand Total   </th>
-                <th className="text-right">{grandTotal}</th>
-              </tr>
-              <tr>
-                <td>
-
-                 
-                </td>
-                <th ></th>
+                <th>Grand Total</th>
+                <th className="text-right">${grandTotal.toFixed(2)}</th>
               </tr>
             </table>
           </div>
 
+          {/* Action Buttons */}
           <div className="row">
-            <div className="col-lg-6"><button type="button" className="btn btn-danger w-100 mb-2 p-2">Cancel</button></div>
-     
-            <div className="col-lg-6 pl-0"><button type="button" onClick={handlePlaceorder} className="btn btn-success w-100 mb-2 p-2">Update Order</button></div>
+            <div className="col-lg-6">
+              <button type="button" className="btn btn-danger w-100 mb-2 p-2" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
+            <div className="col-lg-6 pl-0">
+              <button type="button" onClick={handleUpdateOrder} className="btn btn-success w-100 mb-2 p-2">
+                Update Order
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Right Panel - Food Menu */}
       <div className="col-sm-7 col-lg-7">
         <div className="tbl-h">
           <ul className="nav nav-tabs nav-justified" role="tablist">
             <li className="nav-item">
-              <a className="nav-link pos active"  data-toggle="tab" href="#foodmenu" role="tab" aria-controls="duck2" aria-selected="true"><IoFastFoodSharp className="mr-2" />Food Menu</a>
+              <a className="nav-link pos active" data-toggle="tab" href="#foodmenu" role="tab">
+                <IoFastFoodSharp className="mr-2" />Food Menu
+              </a>
             </li>
           </ul>
         </div>
+
         <div className="tab-content mt-3">
-          <div className="tab-pane active" id="foodmenu" role="tabpanel" aria-labelledby="duck-tab">
+          <div className="tab-pane active" id="foodmenu" role="tabpanel">
             <div className="tbl-h">
               <div className="form-group">
                 <input
@@ -489,12 +473,12 @@ printWindow.document.write('</body></html>');
                   className="form-control"
                 />
               </div>
-              <ul className="nav nav-pills flex-columns shdw-lft " id="myTab" role="tablist">
+
+              <ul className="nav nav-pills flex-columns shdw-lft" id="myTab" role="tablist">
                 {distinctCategories.map((category, index) => (
-                  <li className="nav-item">
+                  <li className="nav-item" key={index}>
                     <a
-                      key={index}
-                      className={`nav-item nav-link ${index === activeTab ? 'active' : ''}`}
+                      className={`nav-link ${index === activeTab ? 'active' : ''}`}
                       onClick={() => setActiveTab(index)}
                     >
                       {category}
@@ -504,30 +488,282 @@ printWindow.document.write('</body></html>');
               </ul>
             </div>
 
+            {/* Food Items Grid */}
             <div className="tab-content p-3" id="myTabContents">
-              {isLoading ? 'Loading' : <div className="row">
-                {foodCategory.length > 0 &&
-                  foodCategory
-                    .filter(item => item.foodcategory.foodcategoryname === distinctCategories[activeTab] &&
-                      item.foodmenuname.toLowerCase().includes(searchTerm.toLowerCase()))
-                    .map((menu, index) => (
-                      <div className="col-sm-3 col-sm-3" key={index}>
-                        <div className="menu-box" onClick={() => addProductToCart(menu)}>
-                          <div className="menu-div">
-                            <h6 className="mt-2">{menu.foodmenuname}</h6>
-                            <p>Price: {menu.salesprice}</p>
+              {isLoading ? (
+                <div className="text-center">Loading...</div>
+              ) : (
+                <div className="row">
+                  {foodCategory.length > 0 &&
+                    foodCategory
+                      .filter(item =>
+                        item.foodcategory.foodcategoryname === distinctCategories[activeTab] &&
+                        item.foodmenuname.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((menu, index) => (
+                        <div className="col-sm-3 col-sm-3" key={index}>
+                          <div className="menu-box" onClick={() => addProductToCart(menu)}>
+                            <div className="menu-div">
+                              <h6 className="mt-2">{menu.foodmenuname}</h6>
+                              <p>Price: ${menu.salesprice}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-              </div>}
+                      ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Print Modal */}
+      {showPrintModal && printData && (
+        <>
+          <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-lg" role="document">
+              <div className="modal-content">
+                <div className="modal-header bg-success text-white">
+                  <h5 className="modal-title">
+                    <i className="fas fa-print mr-2"></i>
+                    Print Preview - Order Update
+                  </h5>
+                  <button
+                    type="button"
+                    className="close text-white"
+                    onClick={() => {
+                      setShowPrintModal(false);
+                      navigate('/pos');
+                    }}
+                  >
+                    <span>&times;</span>
+                  </button>
+                </div>
+
+                <div className="modal-body p-0">
+                  <div ref={printRef} className="p-4">
+                    <div style={{
+                      fontFamily: "'Courier New', monospace",
+                      maxWidth: '300px',
+                      margin: '0 auto'
+                    }}>
+                      {/* Header */}
+                      <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                        <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold', fontSize: '18px' }}>
+                          ORDER UPDATE RECEIPT
+                        </h3>
+                        <h4 style={{ margin: '0 0 3px 0', fontSize: '16px' }}>Restaurant Name</h4>
+                        <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address</p>
+                        <p style={{ margin: '0', fontSize: '12px' }}>Phone: (123) 456-7890</p>
+                        <hr style={{ borderColor: '#000', margin: '10px 0' }} />
+                      </div>
+
+                      {/* Order Information */}
+                      <div style={{ marginBottom: '15px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                          <span><strong>Order #:</strong></span>
+                          <span>{printData.orderNumber}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                          <span><strong>Date:</strong></span>
+                          <span>{new Date(printData.date).toLocaleDateString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                          <span><strong>Time:</strong></span>
+                          <span>{new Date(printData.date).toLocaleTimeString()}</span>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '12px',
+                          color: '#e74c3c',
+                          fontWeight: 'bold'
+                        }}>
+                          <span>Type:</span>
+                          <span>ORDER UPDATE</span>
+                        </div>
+                        <hr style={{ borderColor: '#000', margin: '10px 0' }} />
+                      </div>
+
+                      {/* Updated Items List - Only Changes */}
+                      {printData.changes.length > 0 ? (
+                        <div style={{ marginBottom: '15px' }}>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            marginBottom: '5px',
+                            borderBottom: '2px solid #000',
+                            paddingBottom: '5px'
+                          }}>
+                            <div>ITEM</div>
+                            <div style={{ textAlign: 'center' }}>CHANGE</div>
+                            <div style={{ textAlign: 'center' }}>PRICE</div>
+                            <div style={{ textAlign: 'right' }}>AMOUNT</div>
+                          </div>
+
+                          {printData.changes.map((item, index) => (
+                            <div
+                              key={index}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                fontSize: '12px',
+                                marginBottom: '3px',
+                                paddingBottom: '3px',
+                                borderBottom: '1px dotted #ccc'
+                              }}
+                            >
+                              <div>
+                                {item.foodmenuname}
+                                <div style={{ fontSize: '10px', color: '#666' }}>
+                                  {item.changeType === 'added' ? '[NEW]' :
+                                   item.changeType === 'removed' ? '[REMOVED]' :
+                                   item.changeType === 'increased' ? '[INCREASED]' : '[DECREASED]'}
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'center' }}>
+                                {item.changeType === 'removed' ? '-' : ''}
+                                {Math.abs(item.quantity)}
+                              </div>
+                              <div style={{ textAlign: 'center' }}>${item.salesprice.toFixed(2)}</div>
+                              <div style={{ textAlign: 'right' }}>${item.amount.toFixed(2)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '15px', fontSize: '12px', color: '#666' }}>
+                          No quantity changes detected
+                        </div>
+                      )}
+
+                      <hr style={{ borderColor: '#000', margin: '10px 0' }} />
+
+                      {/* Update Summary */}
+                      {printData.changes.length > 0 && (
+                        <div style={{
+                          backgroundColor: '#f8f9fa',
+                          padding: '10px',
+                          borderRadius: '5px',
+                          marginBottom: '15px',
+                          fontSize: '13px'
+                        }}>
+                          <div style={{
+                            fontWeight: 'bold',
+                            marginBottom: '5px',
+                            color: '#27ae60',
+                            textAlign: 'center'
+                          }}>
+                            UPDATE SUMMARY
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                            <span>Update Subtotal:</span>
+                            <span>${printData.updateSubtotal.toFixed(2)}</span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                            <span>Update VAT (5%):</span>
+                            <span>${printData.updateVat.toFixed(2)}</span>
+                          </div>
+
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontWeight: 'bold',
+                            marginTop: '5px',
+                            paddingTop: '5px',
+                            borderTop: '1px solid #ddd'
+                          }}>
+                            <span>Update Total:</span>
+                            <span>${printData.updateGrandTotal.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Final Totals */}
+                      <div style={{ fontSize: '13px' }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: '5px',
+                          fontWeight: 'bold'
+                        }}>
+                          <span>Final Subtotal:</span>
+                          <span>${printData.finalSubtotal.toFixed(2)}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                          <span>Final VAT:</span>
+                          <span>${printData.finalVat.toFixed(2)}</span>
+                        </div>
+
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontWeight: 'bold',
+                          fontSize: '14px',
+                          marginTop: '10px',
+                          paddingTop: '5px',
+                          borderTop: '2px solid #000'
+                        }}>
+                          <span>FINAL GRAND TOTAL:</span>
+                          <span>${printData.finalGrandTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{
+                        textAlign: 'center',
+                        marginTop: '20px',
+                        fontSize: '11px',
+                        borderTop: '1px dashed #000',
+                        paddingTop: '10px'
+                      }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#27ae60' }}>
+                          *** ORDER UPDATED SUCCESSFULLY ***
+                        </div>
+                        <div style={{ marginBottom: '5px' }}>
+                          Thank you for your business!
+                        </div>
+                        <div>
+                          <small>Printed on: {new Date().toLocaleString()}</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => {
+                      setShowPrintModal(false);
+                      navigate('/pos');
+                    }}
+                  >
+                    <i className="fas fa-times mr-1"></i> Close
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={handlePrint}
+                  >
+                    <i className="fas fa-print mr-1"></i> Print Receipt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Backdrop */}
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
     </div>
-  )
-}
+  );
+};
 
 export default PosOrderEdit;
-

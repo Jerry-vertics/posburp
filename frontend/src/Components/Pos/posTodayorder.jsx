@@ -17,7 +17,7 @@ const PosTodayOrder =() =>{
 
     const [paymentError, setPaymentError] = useState('');
 
-    //Cancel Order 
+    //Cancel Order
     const [email,setEmail] =useState('');
     const [password,setPassword] =useState('');
     const [addedby, setuserid] = useState("");
@@ -53,7 +53,7 @@ const PosTodayOrder =() =>{
 
     fetchData();
   }, []);
-    
+
   useEffect(() => {
     const storeid = localStorage.getItem("_id");
     const storetoken = localStorage.getItem('shifttoken');
@@ -72,15 +72,15 @@ const PosTodayOrder =() =>{
     : 0;
 
     const componentRef = useRef();
-    
+
     const handlePrint = (orderId) => {
       const selectedOrder = posTodayorder.find((order) => order._id === orderId);
       setPrintOrderId(orderId);
       setData(selectedOrder);
       setShowModal(true);
       // Open a new window for printing
-      
-     
+
+
     };
 
     useEffect(() => {
@@ -98,7 +98,7 @@ const PosTodayOrder =() =>{
             console.log(response.data);
             setShowModal(true);
 
-          
+
           })
           .catch((error) => {
             console.error('Error fetching data:', error);
@@ -118,7 +118,7 @@ const PosTodayOrder =() =>{
     console.log(response.data);
     setShowKotModal(true);
   })
-  
+
   .catch((error) => {
     console.error('Error fetching data:', error);
   });
@@ -148,7 +148,7 @@ const handleCancel =(id) =>
     console.log(response.data);
     setCancelModel(true);
   })
-  
+
   .catch((error) => {
     console.error('Error fetching data:', error);
   });
@@ -207,7 +207,7 @@ const handleCancelSubmit = (id, order) => {
         <div className="container">
             <div className="row">
             <table className="table table-hover">
-                    
+
                     <thead>
                         <tr>
                             <th>SI No</th>
@@ -224,7 +224,7 @@ const handleCancelSubmit = (id, order) => {
                         </tr>
                     </thead>
                     <tbody>
-                       
+
                     {
   Array.isArray(posTodayorder) && posTodayorder.length > 0 ? (
     posTodayorder.map((order,key) => {
@@ -235,10 +235,10 @@ const handleCancelSubmit = (id, order) => {
       const orderDate = new Date(order.updatedAt);
       const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
       const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
-    
+
 
       const datetime = `${formattedDate} ${formattedTime}`;
-      
+
 
       return (
         <tr key={order._id}>
@@ -246,7 +246,7 @@ const handleCancelSubmit = (id, order) => {
 
 
 
-          
+
           <td>{order.billnumber}</td>
           <td>{order.ordernumber}</td>
           <td>{order.options}</td>
@@ -299,7 +299,7 @@ const handleCancelSubmit = (id, order) => {
 }
 
 
-                       
+
                     </tbody>
                     <tfoot>
         <tr>
@@ -322,7 +322,7 @@ const handleCancelSubmit = (id, order) => {
             </div>
             <div className="modal-body">
               {/* Display the data here */}
-              
+
               { data ? (
 data.map((order) => {
 
@@ -354,7 +354,7 @@ data.map((order) => {
                     </tr>
                 </thead>
                 <tbody>
-                 
+
                   {order.cart.map((cartItem,key) => (
                 <tr key={cartItem.foodmenuId}>
                   <td>{key + 1}</td>
@@ -362,11 +362,11 @@ data.map((order) => {
                   <td>{cartItem.quantity}</td>
                   <td>{cartItem.salesprice}</td>
                   <td>{cartItem.quantity * cartItem.salesprice}</td>
-                 
+
                   {/* Render other cart item details here */}
                 </tr>
               ))}
-                
+
                 </tbody>
                 </table>
                 <h6 className="text-right">Subtotal: {subTotals}</h6>
@@ -375,26 +375,26 @@ data.map((order) => {
 
 
                 <div className="modal-footer">
-             
+
               <button type="button" className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Close</button>
             </div>
-   
+
              </div>
-           
+
   )  })
               ):(
                 <p>No data</p>
               )
             }
             </div>
-         
+
           </div>
         </div>
       </div>
       <div className={`modal-backdrop ${showModal ? 'show' : ''}`} style={{ display: showModal ? 'block' : 'none' }}></div>
     </div>
     <div>
-  
+
   <div className={`modal ${showkotModal ? 'show' : ''}`} tabIndex="-1" role="dialog" style={{ display: showkotModal ? 'block' : 'none' }}>
          <div className="modal-dialog" role="document">
            <div className="modal-content">
@@ -406,7 +406,7 @@ data.map((order) => {
              </div>
              <div className="modal-body">
                {/* Display the data here */}
-               
+
                { kotdata ? (
  kotdata.map((order) => {
 
@@ -438,7 +438,7 @@ data.map((order) => {
                      </tr>
                  </thead>
                  <tbody>
-                  
+
                    {order.cart.map((cartItem,key) => (
                  <tr key={cartItem.foodmenuId}>
                    <td>{key + 1}</td>
@@ -449,20 +449,20 @@ data.map((order) => {
                    {/* Render other cart item details here */}
                  </tr>
                ))}
-                 
+
                  </tbody>
                  </table>
                  <h6 className="text-right">Subtotal: {subTotals}</h6>
             <h6 className="text-right">VAT Amount ({vatPercentValue}%): {vatAmount}</h6>
             <h6 className="text-right">Grand Total: {grandTotal}</h6>
- 
-            
- 
+
+
+
                  <div className="modal-footer">
-                 <button type="button" onClick={handlePrint}  className="btn btn-outline-primary" >Print</button> 
+                 <button type="button" onClick={handlePrint}  className="btn btn-outline-primary" >Print</button>
                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowKotModal(false)}>Close</button>
              </div>
-    
+
               </div>
  )
                    })
@@ -471,13 +471,13 @@ data.map((order) => {
                )
              }
              </div>
-          
+
            </div>
          </div>
        </div>
        <div className={`modal-backdrop ${showkotModal ? 'show' : ''}`} style={{ display: showkotModal ? 'block' : 'none' }}></div>
-       
-       
+
+
      </div>
 
      <div>
@@ -501,16 +501,16 @@ data.map((order) => {
                   <h5>Order Number: {order.billnumber}</h5>
                 <h5>Order Number: {order.ordernumber}</h5>
                 <h6>Options: {order.options}</h6>
-              
-     
+
+
                  <h6 className="text-right">Total :{order.total}</h6>
-                
+
                  <h6 className="text-right">Grand Total :{order.grandTotal}</h6>
-                  
+
                  <div className="form-group row">
                       <label for="exampleInputUsername2" className="col-sm-3 col-form-label">User Name</label>
                       <div className="col-sm-9">
-                        
+
                       <input type="text" className="form-control" name="email" value={email} onChange={(e) => {setEmail(e.target.value)}} placeholder="Enter Email" />
                       </div>
                     </div>
@@ -522,24 +522,24 @@ data.map((order) => {
 
                       </div>
                     </div>
-            
-            
- 
+
+
+
                  <div className="modal-footer">
-                 <button type="button" onClick={() =>handleCancelSubmit(order._id, order)}  className="btn btn-outline-primary" >Submit Cancel Payment</button> 
+                 <button type="button" onClick={() =>handleCancelSubmit(order._id, order)}  className="btn btn-outline-primary" >Submit Cancel Payment</button>
                <button type="button" className="btn btn-outline-secondary" onClick={() => setCancelModel(false)}>Close</button>
              </div>
-    
+
               </div>
-            
+
                ))
                ):(
-                 <p>No data</p>
+                 <p>No datas</p>
                )
              }
-             
+
              </div>
-          
+
            </div>
          </div>
        </div>
