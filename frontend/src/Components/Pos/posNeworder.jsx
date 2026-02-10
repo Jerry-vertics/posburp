@@ -230,6 +230,7 @@ const [loadingQuickPay, setLoadingQuickPay] = useState(false);
       takeaway: true,
       delivery: true,
     });
+     setActiveTab(1);
   };
 //  console.log("selectWaiter is not empty:", selectWaiter);
   const handleTable = (tables) => {
@@ -1401,14 +1402,7 @@ const handleQuickPay = (event) => {
                 </a>
               </li>
             )}
-            {/* {
-              enableDinein && ( <li className="nav-item">
-                <a className="nav-link pos "  onClick={() => {
-                // handleDinein();
-                setSelectTable('');
-              }} data-toggle="tab" href="#table" role="tab" aria-controls="duck2" aria-selected="true"><SiTablecheck className="mr-2" />Table</a>
-              </li>
-           ) } */}
+
             {tabEnabled.delivery && (
               <li className="nav-item">
                 <a
@@ -1536,97 +1530,8 @@ const handleQuickPay = (event) => {
 
             {/* } */}
           </div>
-          {/* <div className="tab-pane " id="table" role="tabpanel" aria-labelledby="duck-tab">
 
-          <input
-        type="text"
-        placeholder="Search Tables..."
-        value={searchTable}
-        className="form-control"
-        onChange={handleSearchTable}
-      /><br />
-            <div className="row">
-              {
-                filteredTables.map((tables, index) => (
-                  // <div className="col-sm-3 col-md-3">
-                  <div key={index} className={`col-sm-3 col-md-3 ${selectTable === tables ? 'disabled' : ''}`}>
-                     <div
-               className={`menu-box ${selectTable ? 'read-only' : 'selectable'}`} onClick={(e) => {
-                      setSelectTable(tables)
-                      setShowFoodMenuTab(true)
-                    }}>
 
-                      <h6><SiTablecheck className="mr-2" /><br />{tables.tablename}</h6>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div> */}
-          {/* {enableDinein && (
-        <div className="tab-pane" id="table" role="tabpanel" aria-labelledby="duck-tab">
-          <input
-            type="text"
-            placeholder="Search Tables..."
-            value={searchTable}
-            className="form-control"
-            onChange={handleSearchTable}
-          />
-          <br />
-          <div className="row">
-            {filteredTables.map((tables, index) => (
-              <div
-                key={index}
-                className={`col-sm-3 col-md-3 ${selectTable === tables ? 'disabled' : ''}`}
-              >
-                <div
-                  className={`menu-box ${selectTable ? 'read-only' : 'selectable'}`}
-                >
-                  <h6>
-                    <SiTablecheck className="mr-2" />
-                    <br />
-                    {tables.tablename}
-                  </h6>
-                  <p>SeatCapacity:{tables.seatcapacity}</p>
-                  <p>Available Seat:{tables.availableSeat}</p>
-                </div>
-                <div className="flex-row-container">
-                  <div className="flex-row-item">
-                    <input
-                      type="text"
-                      name="numberofperson"
-                      value={numberofperson[tables._id] || ''}
-                      onChange={(e) => {
-                        handleNumberofPersonChange(e, tables._id);
-                      }}
-                      className="form-control"
-                      placeholder="No Of Person"
-                      readOnly={tables.availableSeat === 0}
-                    />
-                  </div>
-                  <div className="flex-row-item">
-                    <a
-                      className={`btn btn-outline-primary ${
-                        !isValidNumber() ||
-                        tables.availableSeat === 0 ||
-                        parseInt(numberofperson[tables._id] || 0) > parseInt(tables.seatcapacity)
-                          ? 'enabled'
-                          : ''
-                      }`}
-                      onClick={() => {
-                        console.log('Add button clicked');
-                        setSelectTable(tables);
-                        handleTable(tables);
-                      }}
-                    >
-                      Add
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )} */}
          {enableDinein && (
             <div
               className="tab-pane"
@@ -1794,49 +1699,9 @@ const handleQuickPay = (event) => {
                     className="form-control"
                   />
                 </div>
-                {/* <ul
-                  className="nav nav-pills flex-columns shdw-lft "
-                  id="myTab"
-                  role="tablist"
-                >
-                  {distinctCategories.map((category, index) => (
-                    <li className="nav-item">
-                      <a
-                        key={index}
-                        className={`nav-item nav-link ${index === activeTab ? "active" : ""
-                          }`}
-                        onClick={() => setActiveTab(index)}
-                      >
-                        {category}
-                      </a>
-                    </li>
-                  ))}
-                </ul> */}
-                 {/* <div className="tab-scroll-container">
-      <div className="nav-buttons">
-        <button onClick={() => handleTabsClick(activeTab - 1)} disabled={activeTab === 0}>&lt;</button>
-        <button onClick={() => handleTabsClick(activeTab + 1)} disabled={activeTab === distinctCategories.length - 1}>&gt;</button>
-      </div>
-      <div className="nav-container">
-        <ul className="nav nav-pills flex-columns shdw-lft" id="myTab" role="tablist">
-          {distinctCategories.map((category, index) => (
-            <li className="nav-item" key={index}>
-              <a
-                className={`nav-item nav-link ${index === activeTab ? "active" : ""}`}
-                onClick={() => handleTabsClick(index)}
-              >
-                {category}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div> */}
+
        <div className="tab-scroll-container">
-      {/* <div className="nav-buttons">
-        <button onClick={() => handleTabsClick(activeTab - 1)} disabled={activeTab === 0}>&lt;</button>
-        <button onClick={() => handleTabsClick(activeTab + 1)} disabled={activeTab === distinctCategories.length - 1}>&gt;</button>
-      </div> */}
+
       <div className="nav-container">
         <ul className="nav nav-pills flex-row shdw-lft" id="myTab" role="tablist">
           {distinctCategories.map((category, index) => (
