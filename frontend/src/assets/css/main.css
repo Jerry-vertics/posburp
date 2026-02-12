@@ -17,7 +17,7 @@
 .wraper{
     width: 100%;
     display: inline-block;
-    border-radius: 6px;   
+    border-radius: 6px;
     padding: 20px;
     height: 98%;
     min-height: 97vh;
@@ -36,8 +36,8 @@
     display: inline-block;
     background-color: #fff;
     box-shadow: 0px 0px 15px rgb(0 0 0 / 10%);
-    border-radius: 6px; 
-    padding: 20px;  
+    border-radius: 6px;
+    padding: 20px;
 }
 .has-search .form-control {
     padding-left: 2.375rem;
@@ -112,35 +112,100 @@
     padding: 10px;
 }
 
-.menu-box{
-    background-color: #fff;
-    box-shadow: 0px 0px 10px rgb(0 0 0 / .08%);
-    border: 1px solid #e6e6e6;
-    padding: 15px;
-    text-align: center;
-    border-radius: 5px;
-    transition: ease all 0.3s;
-    margin-bottom: 25px;
-    height: 110px;
-    display: flex;
-    justify-content: center;
-    align-items: center;   
+.foodmenu-box {
+  background-color: #fff;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e6e6e6;
+  border-radius: 5px;
+  transition: ease all 0.3s;
+  margin-bottom: 25px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  width: 100%;
+
 }
-.menu-box:hover{
-    box-shadow: 0px 0px 50px rgb(0 0 0 / 30%);
+
+.foodmenu-box:hover {
+  box-shadow: 0px 0px 50px rgba(0, 0, 0, 0.3);
 }
-.menu-div{
-    width: 100%;
-    float: left;
+
+.foodmenu-div {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: nowrap;
+}
+
+.foodimg {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+ border-radius: 8px 8px 0 0;
+  flex-shrink: 0; /* Prevents image from shrinking */
+}
+
+.menu-details {
+  flex: 1;
+  text-align: left;
+  min-width: 0; /* Prevents text overflow issues */
+}
+
+
+
+/* Responsive adjustments for mobile */
+@media screen and (max-width: 768px) {
+  .foodmenu-box {
+    padding: 12px;
+  }
+
+  .foodimg {
+    width: 80px;
+    height: 80px;
+  }
+
+  .foodmenu-div {
+    gap: 12px;
+  }
+
+  .menu-details h6 {
+    font-size: 12px !important;
+  }
+
+  .menu-details p {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .foodmenu-box {
+    padding: 10px;
+  }
+
+  .foodimg {
+    width: 70px;
+    height: 70px;
+  }
+
+  .foodmenu-div {
+    gap: 10px;
+  }
 }
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
     color: #000;
     background-color: #eee;
     /* border-radius:10px 0px 0px 10px; */
-    margin-left: 2px;
-    margin-top: 3px;
-    margin-bottom: 3px;
+    /* margin-left: 2px; */
+    /* margin-top: 3px;
+    margin-bottom: 3px; */
     font-weight: 600;
+}
+.posfont
+{
+    font-size: 5px !important;
 }
 .h-175{
     height: 175px !important;
@@ -173,7 +238,7 @@
     padding-top: 20px !important;
     padding-bottom: 20px !important;
     line-height: 32px !important;
-   
+
 }
 a.nav-link.nav-link-waiter.active img{
     filter: invert(1);
@@ -188,15 +253,15 @@ a.nav-link.nav-link-waiter.active img{
 /* ==================== media query ====================== */
 
 @media (min-width: 768px) {
-   
+
 }
 
 @media (max-width: 1024px) {
-   
+
 }
 
 @media (max-width: 767px) {
-    
+
 }
 
 .error
@@ -223,18 +288,27 @@ flex-columns {
     overflow-x: auto;
     white-space: nowrap;
   }
-  
+
   .nav-buttons {
     display: flex;
   }
-  
+
   .nav-buttons button {
     margin: 5px;
   }
-  
+
   .nav-container {
     display: inline-block;
   }
 
 
 
+.cart-scroll {
+  max-height: 300px !important;
+  overflow-y: auto;
+}
+.btn .btn-outline-primary:hover
+{
+  background-color:linear-gradient(320deg, #c82333 0%, #c82333 100%) !important ;
+  color: #fff;
+}

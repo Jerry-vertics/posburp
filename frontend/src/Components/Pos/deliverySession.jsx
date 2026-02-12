@@ -10,6 +10,7 @@ import { FaShoppingCart, FaHistory, FaPause,FaRegCalendarAlt    } from 'react-ic
 import { MdBookOnline } from "react-icons/md";
 import { IoMdToday } from "react-icons/io";
 import PosDeliverySession from "./posDeliverySession";
+import { PosMessmanage } from "./mess/PosMessmanage";
 const DeliverySession =() =>{
 
 
@@ -21,7 +22,7 @@ const DeliverySession =() =>{
         setActiveTab(tabName);
       };
     return (
-     
+
             <div className="container-fluid">
                     <div className="division">
                     <div className="row">
@@ -32,7 +33,7 @@ const DeliverySession =() =>{
             <div className="menumain">
               <ul className="nav nav-tabs nav-justified" role="tablist">
                 <li className="nav-item ">
-                 
+
                   <Link className="nav-link"  data-toggle="tab"
                    to="/pos"
                     role="tab"
@@ -40,30 +41,30 @@ const DeliverySession =() =>{
                 </li>
                 <li className="nav-item">
 
-                 
+
                     <Link className="nav-link "  data-toggle="tab"
                    to="/runningorder"
                     role="tab"
                     aria-controls="neworder" ><FaHistory className="mr-2" />Running Order</Link>
                 </li>
-               
-                
+
+
                 <li className="nav-item">
-               
+
                     <Link className="nav-link "  data-toggle="tab"
                    to="/onlineorder"
                     role="tab"
                     aria-controls="neworder" ><MdBookOnline  className="mr-1" /> Online Order</Link>
                 </li>
                 <li className="nav-item">
-                
+
                    <Link className="nav-link active"  data-toggle="tab"
                    to="/deliverysession"
                     role="tab"
-                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />  Delivery Settlement</Link>
+                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />  Mess Management</Link>
                 </li>
                 <li className="nav-item">
-               
+
                    <Link className="nav-link "  data-toggle="tab"
                    to="/settlementreport"
                     role="tab"
@@ -109,7 +110,7 @@ const DeliverySession =() =>{
                   <FaRegCalendarAlt className="mr-2" /> Invoice Report
                   </a>
                 </li> */}
-               
+
               </ul>
             </div>
           </div>
@@ -118,9 +119,10 @@ const DeliverySession =() =>{
       <div className="row">
         <div className="tab-content mt-3">
         <div className={`tab-pane ${activeTab === 'neworder' ? 'active' : ''}`} id="neworder" role="tabpanel" aria-labelledby="neworder-tab">
-            <PosDeliverySession  />
+            {/* <PosDeliverySession  /> */}
+            <PosMessmanage />
           </div>
-          
+
         </div>
       </div>
     </div>

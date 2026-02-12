@@ -21,7 +21,7 @@ const SettlementReport =() =>{
         setActiveTab(tabName);
       };
     return (
-     
+
             <div className="container-fluid">
                     <div className="division">
                     <div className="row">
@@ -32,7 +32,7 @@ const SettlementReport =() =>{
             <div className="menumain">
               <ul className="nav nav-tabs nav-justified" role="tablist">
                 <li className="nav-item ">
-                 
+
                   <Link className="nav-link"  data-toggle="tab"
                    to="/pos"
                     role="tab"
@@ -40,30 +40,30 @@ const SettlementReport =() =>{
                 </li>
                 <li className="nav-item">
 
-                  
+
                     <Link className="nav-link "  data-toggle="tab"
                    to="/runningorder"
                     role="tab"
                     aria-controls="neworder" ><FaHistory className="mr-2" />Running Order</Link>
                 </li>
-               
-                
+
+
                 <li className="nav-item">
-                
+
                     <Link className="nav-link "  data-toggle="tab"
                    to="/onlineorder"
                     role="tab"
                     aria-controls="neworder" ><MdBookOnline  className="mr-1" /> Online Order</Link>
                 </li>
                 <li className="nav-item">
-               
+
                    <Link className="nav-link "  data-toggle="tab"
                    to="/deliverysession"
                     role="tab"
-                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />  Delivery Settlement</Link>
+                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />Mess Management</Link>
                 </li>
                 <li className="nav-item">
-               
+
                    <Link className="nav-link active"  data-toggle="tab"
                    to="/settlementreport"
                     role="tab"
@@ -109,7 +109,7 @@ const SettlementReport =() =>{
                   <FaRegCalendarAlt className="mr-2" /> Invoice Report
                   </a>
                 </li> */}
-               
+
               </ul>
             </div>
           </div>
@@ -120,7 +120,7 @@ const SettlementReport =() =>{
         <div className={`tab-pane ${activeTab === 'neworder' ? 'active' : ''}`} id="neworder" role="tabpanel" aria-labelledby="neworder-tab">
         <PosTodayOrder  />
           </div>
-          
+
         </div>
       </div>
     </div>

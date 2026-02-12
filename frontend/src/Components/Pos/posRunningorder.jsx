@@ -15,10 +15,10 @@ const PosRunningOrder = ()=>{
     const [posRunningorder, setPosRunningorder] = useState([]);
     const [data, setData] = useState(null);
     const [kotdata,setkotData] =useState(null);
- 
+
     const [showModal, setShowModal] = useState(false);
     const [showkotModal,setShowKotModal] =useState(false);
- 
+
 
  const [searchTerm, setSearchTerm] = useState('');
    const [refresh, setRefresh] = useState(false);
@@ -35,7 +35,7 @@ const PosRunningOrder = ()=>{
       const componentRef = useRef();
 
       const kotModalRef = useRef();
-    
+
       const handlePrint = () => {
         if (kotModalRef.current) {
           // Use ReactToPrint to handle the print action for the KOT modal
@@ -54,7 +54,7 @@ const PosRunningOrder = ()=>{
       const orderNumberIncludes = order.ordernumber.toLowerCase().includes(searchTermLower);
       const tableNameIncludes = order.table && order.table.tablename.toLowerCase().includes(searchTermLower);
       const waiterNameIncludes = order.waiter.firstname.toLowerCase().includes(searchTermLower);
-    
+
       return orderNumberIncludes || (tableNameIncludes && waiterNameIncludes);
     });
     const handleComplete =(id) =>{
@@ -66,7 +66,7 @@ const PosRunningOrder = ()=>{
             setShowModal(true);
           })
           .then(() => {
-           
+
             setPosRunningorder((prevOrders) => prevOrders.filter(order => order._id !== id));
           })
           .catch((error) => {
@@ -77,15 +77,15 @@ const PosRunningOrder = ()=>{
 
     const closeModal = () => {
         setShowModal(false);
-        
+
       };
 
 
 
 
-  
 
-  
+
+
 const handlekot =(id) =>
 {
 
@@ -96,7 +96,7 @@ const handlekot =(id) =>
     console.log(response.data);
     setShowKotModal(true);
   })
-  
+
   .catch((error) => {
     console.error('Error fetching data:', error);
   });
@@ -112,7 +112,7 @@ const handleEdit =(id) =>
     console.log(response.data);
    // setShowKotModal(true);
   })
-  
+
   .catch((error) => {
     console.error('Error fetching data:', error);
   });
@@ -132,26 +132,26 @@ const handleEdit =(id) =>
       console.log(response.data);
       setShowSplitModal(true);
     })
-    
+
     .catch((error) => {
       console.error('Error fetching data:', error);
     });
-  
+
   }
 
-  
+
 
   const handleMergeRequest = async () => {
-    
+
     try {
       const response = await axios.post(`${apiConfig.baseURL}/api/pos/getmerge/`, {
          ids:checkedOrders
       });
       setMergedata(response.data);
       setMergeModal(true);
-    
+
     } catch (error) {
-     
+
       console.error('Error:', error);
     }
   }
@@ -167,12 +167,12 @@ const handleEdit =(id) =>
   };
 
 
- 
+
     return(
         <>
         <div className="container">
 
-      
+
         <div className="row">
 
        <div className="col-md-10">
@@ -189,10 +189,10 @@ const handleEdit =(id) =>
        <div className="col-md-2">
        <a class="btn btn-outline-primary" onClick={handleMergeRequest}>Merge</a>
        </div>
-        
-     
+
+
        {
-  filteredOrders.map((order) => (
+filteredOrders.map((order) => (
     <div key={order._id} className="col-md-3">
       <div className="menu-boxs">
         <div className="menu-div">
@@ -209,14 +209,14 @@ const handleEdit =(id) =>
           <h5 className="text-center"><span>{order.ordernumber}</span></h5>
           <h6 className="text-center">Table: {order.table ? order.table.tablename : 'No Table'}</h6>
           <h6 className="text-center">WaiterName: {order.waiter.firstname}{order.waiter.lastname}</h6>
-          <h6 className="text-center">Running order</h6>
+          <h6 className="text-start">Running order</h6> {/* Changed from text-center to text-start */}
 
-          <div className="row">
-            <div className="d-inline mx-auto">
-              <a className="btn btn-outline-primary" onClick={(e) => handleComplete(order._id)}>Payment</a>
-              <a className="btn btn-outline-primary" onClick={(e) => handlekot(order._id)}>KOT</a>
-              <Link to={`/posedit/${order._id}`} className="btn btn-outline-primary">Edit</Link>
-              <a className="btn btn-outline-primary" onClick={(e) => handlesplit(order._id)}>Split</a>
+          <div className="row mt-3"> {/* Added mt-3 for top margin */}
+            <div className="d-flex justify-content-start gap-2 mx-auto"> {/* Changed to d-flex with gap */}
+              <a className="btn btn-outline-primary btn-sm" onClick={(e) => handleComplete(order._id)}>Payment</a>
+              <a className="btn btn-outline-primary btn-sm" onClick={(e) => handlekot(order._id)}>KOT</a>
+              <Link to={`/posedit/${order._id}`} className="btn btn-outline-primary btn-sm">Edit</Link>
+              <a className="btn btn-outline-primary btn-sm" onClick={(e) => handlesplit(order._id)}>Split</a>
             </div>
           </div>
         </div>
@@ -225,7 +225,7 @@ const handleEdit =(id) =>
   ))
 }
 
-        
+
         </div>
  {/* Modal */}
     <RunningPaymentModal data={data} showModal={showModal} setShowModal={setShowModal} />
@@ -239,7 +239,7 @@ const handleEdit =(id) =>
       {/* Merge Modal */}
 
       <PosMergemodal mergdata={mergdata}  mergeModal={mergeModal} setMergeModal={setMergeModal} />
-  
+
     </div>
         </>
     );

@@ -19,7 +19,6 @@ import { LiaFileInvoiceSolid } from "react-icons/lia";
 import { SiTablecheck } from "react-icons/si";
 import { IoFastFoodSharp } from "react-icons/io5";
 import { CiDeliveryTruck } from "react-icons/ci";
-import { FiSettings,FiPlus, FiMinus,FiX } from "react-icons/fi";
 
 import { MdBookOnline } from "react-icons/md";
 import { FaUserAlt } from "react-icons/fa";
@@ -141,8 +140,7 @@ const PosNewOrder = () => {
   const [posHoldingorder, setPosHoldingorder] = useState([]);
   const [isModalHold, setModalHold] = useState(false);
   const [isModalCashDrop, setModalCashDrop] = useState(false);
-  //const [numberofperson, setNumberofPerson] = useState("");
-  const [numberofperson, setNumberofPerson] = useState({});
+  const [numberofperson, setNumberofPerson] = useState("");
   const [isModalInvoiceReport, setModalInvoiceReport] = useState(false);
   const [isModalClosingBalance,setModalClosingBalance] =useState(false);
   const [isModalCanelOrders,setModalCancelOrders] =useState(false);
@@ -235,31 +233,19 @@ const [loadingQuickPay, setLoadingQuickPay] = useState(false);
      setActiveTab(1);
   };
 //  console.log("selectWaiter is not empty:", selectWaiter);
-const handleTable = (tables) => {
-  const personCount = numberofperson[tables._id];
-
-  if (!personCount || personCount.trim() === "") {
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Please enter the number of persons!",
-    });
-  } else {
-    setSelectTable(tables);
-    setEnableFoodmenu(true);
-    setShowFoodMenuTab(true);
-    setActiveTab(0); // Change this to 0 (or whatever index your food menu categories start at)
-
-    // Also need to ensure the food menu tab is shown and active
-    // You might need to force the tab to show
-    setTimeout(() => {
-      const foodMenuTab = document.querySelector('a[href="#foodmenu"]');
-      if (foodMenuTab) {
-        foodMenuTab.click();
-      }
-    }, 100);
-  }
-};
+  const handleTable = (tables) => {
+    if (numberofperson.trim() === "") {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please enter the number of persons!",
+      });
+    } else {
+      setSelectTable(tables);
+      setEnableFoodmenu(true);
+      setShowFoodMenuTab(true);
+    }
+  };
 
   const handleTabsClick = (index) => {
     setActiveTab(index);
@@ -273,49 +259,29 @@ const handleTable = (tables) => {
   //   }));
   // };
 
-  // const handleNumberofPersonChange = (e) => {
-  //   const value = e.target.value;
+  const handleNumberofPersonChange = (e) => {
+    const value = e.target.value;
 
-  //   // Validate if the entered value is a valid positive integer
-  //   if (/^[1-9]\d*$/.test(value) || value === "") {
-  //     setNumberofPerson(value);
-  //   }
-  // };
+    // Validate if the entered value is a valid positive integer
+    if (/^[1-9]\d*$/.test(value) || value === "") {
+      setNumberofPerson(value);
+    }
+  };
 
-  const handleNumberofPersonChange = (e, tableId) => {
-  const value = e.target.value;
+  const isValidNumber = () => {
+    return /^[1-9]\d*$/.test(numberofperson);
+  };
 
-  // Validate if the entered value is a valid positive integer
-  if (/^[1-9]\d*$/.test(value) || value === "") {
-    setNumberofPerson((prev) => ({
-      ...prev,
-      [tableId]: value
-    }));
-  }
-};
-
- const isValidNumber = (tableId) => {
-  const value = numberofperson[tableId];
-  return value && /^[1-9]\d*$/.test(value);
-};
-const handleTakeway = (e) => {
-  setTabEnabled({
-    dineIn: false,
-    delivery: false,
-    takeaway: true,
-  });
-  setOptions("Take Away");
-  setEnableDinein(false);
-  setShowCustomerTab(false);
-  setShowDeliveryTab(false);
-  setSelectTable("");
-  setSelectCustomer("");
-  setSelectDelivery("");
-  setNumberofPerson("");
-  // Directly enable food menu for takeaway
-  setEnableFoodmenu(true);
-  setShowFoodMenuTab(true);
-};
+  const handleTakeway = (e) => {
+    // setEnableTakeway(false);
+    setTabEnabled({
+      dineIn: false,
+      delivery: false,
+      takeaway: true,
+    });
+    setOptions("Take Away");
+    setShowFoodMenuTab(true);
+  };
 
   const handleDelivery = (e) => {
     setTabEnabled({
@@ -332,8 +298,7 @@ const handleTakeway = (e) => {
     setShowDeliveryTab(false);
   };
   const handleMenu = (e) => {
-     setEnableFoodmenu(true);
-  setShowFoodMenuTab(true);
+    setEnableFoodmenu(true);
   };
   const handleDeliveryPerson = (e) => {
     setShowCustomerTab(false);
@@ -551,7 +516,7 @@ const handlePlaceorder = async (event) => {
 
     if (selectTable && selectTable._id) {
       posData.append('tableId', selectTable._id);
-      posData.append('numberofperson', numberofperson[selectTable._id] || '');
+      posData.append('numberofperson', numberofperson);
     }
 
     if (selectWaiter && selectWaiter._id) {
@@ -583,12 +548,53 @@ const handlePlaceorder = async (event) => {
         setOrderData(response.data);
         setShowPrintModal(true);
 
-        // Call handleClearClick to reset everything
-        handleClearClick();
+        // Clear cart and reset states
+        setCart([]);
+        setTotalAmount(0);
+        setTotalVat(0);
+        setGrandTotal(0);
+
+        // Reset tabs
+        setSelectWaiter("");
+        setSelectCustomer("");
+        setSelectDelivery("");
+        setSelectTable("");
+        setOptions("");
+        setNumberofPerson("");
+        setTabEnabled({
+          dineIn: false,
+          takeaway: false,
+          delivery: false,
+        });
+        setEnableDinein(false);
+        setShowCustomerTab(false);
+        setShowFoodMenuTab(false);
+        setShowDeliveryTab(false);
+
       } else {
         // User clicked "No, continue"
-        // Just call handleClearClick to reset everything
-        handleClearClick();
+        // Clear cart and reset states
+        setCart([]);
+        setTotalAmount(0);
+        setTotalVat(0);
+        setGrandTotal(0);
+
+        // Reset tabs
+        setSelectWaiter("");
+        setSelectCustomer("");
+        setSelectDelivery("");
+        setSelectTable("");
+        setOptions("");
+        setNumberofPerson("");
+        setTabEnabled({
+          dineIn: false,
+          takeaway: false,
+          delivery: false,
+        });
+        setEnableDinein(false);
+        setShowCustomerTab(false);
+        setShowFoodMenuTab(false);
+        setShowDeliveryTab(false);
       }
     });
 
@@ -869,7 +875,6 @@ const handleQuickPay = (event) => {
 
   if (selectTable && selectTable._id) {
     posData.append("tableId", selectTable._id);
-    posData.append("numberofperson", numberofperson[selectTable._id] || '');
   }
 
   if (selectWaiter && selectWaiter._id) {
@@ -914,12 +919,53 @@ const handleQuickPay = (event) => {
           setOrderData(orderData);
           setShowPrintModal(true);
 
-          // Call handleClearClick to reset everything
-          handleClearClick();
+          // Clear cart and reset states
+          setCart([]);
+          setTotalAmount(0);
+          setTotalVat(0);
+          setGrandTotal(0);
+
+          // Reset tabs
+          setSelectWaiter("");
+          setSelectCustomer("");
+          setSelectDelivery("");
+          setSelectTable("");
+          setOptions("");
+          setNumberofPerson("");
+          setTabEnabled({
+            dineIn: false,
+            takeaway: false,
+            delivery: false,
+          });
+          setEnableDinein(false);
+          setShowCustomerTab(false);
+          setShowFoodMenuTab(false);
+          setShowDeliveryTab(false);
+
         } else {
           // User clicked "No, continue"
-          // Just call handleClearClick to reset everything
-          handleClearClick();
+          // Clear cart and reset states
+          setCart([]);
+          setTotalAmount(0);
+          setTotalVat(0);
+          setGrandTotal(0);
+
+          // Reset tabs
+          setSelectWaiter("");
+          setSelectCustomer("");
+          setSelectDelivery("");
+          setSelectTable("");
+          setOptions("");
+          setNumberofPerson("");
+          setTabEnabled({
+            dineIn: false,
+            takeaway: false,
+            delivery: false,
+          });
+          setEnableDinein(false);
+          setShowCustomerTab(false);
+          setShowFoodMenuTab(false);
+          setShowDeliveryTab(false);
         }
       });
     })
@@ -941,6 +987,94 @@ const handleQuickPay = (event) => {
   const handlequickPrint = useReactToPrint({
     content: () => printComponentRef.current,
   });
+
+  const printQuickDetails = (newEntry, updatedDocuments) => {
+    const printWindow = window;
+    printWindow.document.write('<html><head><title>Order Details</title>');
+
+    // Add style for center alignment and table styling
+    printWindow.document.write(`
+      <style>
+        body { text-align: center; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th, td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+        }
+        td {
+          font-size: 11px;
+          text-transform: capitalize;
+        }
+        .order-info {
+          display: flex;
+          justify-content: space-between;
+        }
+      </style>
+    `);
+
+    printWindow.document.write('</head><body>');
+
+    // Include order details and image in the print window
+    printWindow.document.write(`<img src="${imagePaths}" alt="Logo" style="max-width: 100%;" onload="window.print(); location.reload();">`);
+    printWindow.document.write(`<p>Bill Number: ${updatedDocuments.billnumber}</p>`);
+    printWindow.document.write(`<p>Order ID: ${newEntry.ordernumber}</p>`);
+
+    const orderDate = new Date(newEntry.date);
+    const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
+    const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
+    printWindow.document.write(`<p>Date and Time: ${formattedDate} ${formattedTime}</p>`);
+
+    // Print details of each item in the cart in a table
+    if (newEntry.cart && newEntry.cart.length > 0) {
+      printWindow.document.write(`
+        <table>
+          <thead>
+            <tr>
+              <th>Food Name</th>
+              <th>Qty</th>
+              <th>Total Price</th>
+            </tr>
+          </thead>
+          <tbody>
+      `);
+
+      let subtotal = 0;
+
+      newEntry.cart.forEach((item) => {
+        const totalPrice = item.quantity * item.salesprice;
+        subtotal += totalPrice;
+
+        printWindow.document.write(`
+          <tr>
+            <td>${item.foodmenuname}</td>
+            <td>${item.quantity}</td>
+            <td>${totalPrice}</td>
+          </tr>
+        `);
+      });
+
+      // Calculate VAT amount and overall total
+      const vatPercentValue = 5;
+      const vatAmounts = (subtotal * vatPercentValue) / 100;
+      const overallTotal = subtotal + vatAmount;
+      const subTotals = subtotal - vatAmounts;
+
+      printWindow.document.write('</tbody></table>');
+
+      printWindow.document.write(`<p>VAT Amount: ${vatAmounts}</p>`);
+      printWindow.document.write(`<p>Subtotal: ${subTotals}</p>`);
+      printWindow.document.write(`<p>Overall Total: ${subtotal}</p>`);
+    }
+
+    printWindow.document.write('</body></html>');
+  };
 
   const handleTabClick = () => {
     setModalOpen(true);
@@ -971,86 +1105,16 @@ const handleQuickPay = (event) => {
     setModalCancelOrders(true);
   }
 
-const tabStyle = {
-  display: showFoodMenuTab ? 'block' : 'none',
 
-};
   return (
     <div className="row">
-  <div className="col-12 col-sm-12 col-md-3 col-lg-1">
-   <div className="pos-menu">
-
-    <button className="pos-btn active" onClick={handleClearClick}>
-      <FaHistory className="pos-icon" />
-      Clear
-    </button>
-
-
-     <button className="pos-btn" onClick={handleClearClick}>
-      <FaHistory className="pos-icon" />
-      <span>Customer Add</span>
-    </button>
-
-
-    <button className="pos-btn" onClick={handleTabClick}>
-      <TbToolsKitchen3 className="pos-icon" />
-      KOT
-    </button>
-
-    <button className="pos-btn" onClick={handleHoldClick}>
-      <BsFillPauseCircleFill className="pos-icon" />
-      <span>Hold Order</span>
-    </button>
-
-    <button className="pos-btn" onClick={handleDropoutClick}>
-      <FaHandHoldingDroplet className="pos-icon" />
-      <span>Cash Drop/Out</span>
-    </button>
-
-    <button className="pos-btn">
-      <RiArchiveDrawerLine className="pos-icon" />
-      <span>Open Cash Drawer</span>
-    </button>
-
-    <button className="pos-btn" onClick={handleClosingBalance}>
-      <LiaFileInvoiceSolid className="pos-icon" />
-      <span>Closing Balance</span>
-    </button>
-
-    <button className="pos-btn" onClick={handleInvoiceClick}>
-      <LiaFileInvoiceSolid className="pos-icon" />
-      <span>Invoice Report</span>
-    </button>
-
-    <button className="pos-btn" onClick={handleCancelOrders}>
-      <LiaFileInvoiceSolid className="pos-icon" />
-      <span>Cancel Orders</span>
-    </button>
-
-     <button className="pos-btn" onClick={handleCancelOrders}>
-      <LiaFileInvoiceSolid className="pos-icon" />
-      <span>Delivery Settlement</span>
-    </button>
-     <button className="pos-btn" onClick={handleCancelOrders}>
-      <LiaFileInvoiceSolid className="pos-icon" />
-      <span>Daily Settlement</span>
-    </button>
-
-    <button className="pos-btn">
-      <FiSettings className="pos-icon" />
-      Settings
-    </button>
-
-  </div>
-  </div>
-
-  <div className="col-12 col-sm-12 col-md-4 col-lg-4">
-
+      <div className="col-sm-4 col-lg-4">
+        <div className="wraper shdw">
           <div
-            className="table-responsive vh-40"
+            className="table-responsive vh-70"
             style={{ overflowY: "scroll" }}
           >
-            <table className="table cart-scroll">
+            <table className="table ">
               <thead>
                 <tr className="thead-light">
                   <th>No.</th>
@@ -1068,92 +1132,37 @@ const tabStyle = {
                     <tr key={key}>
                       {/* <td>{cartProduct._id}</td> */}
                       <td>{key + 1}</td>
-                      <td className="cartfoodmenuname">{cartProduct.foodmenuname}</td>
+                      <td>{cartProduct.foodmenuname}</td>
                       <td>{cartProduct.salesprice}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-  <button
-    className="btn btn-danger btn-sm"
-    onClick={() => handleDecrement(cartProduct)}
-    style={{
-      borderRadius: '50%',
-      width: '20px',
-      height: '20px',
-      padding: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '18px',
-      lineHeight: '1',
-      marginTop:'5px'
-    }}
-  >
-     <FiMinus size={14} />
-  </button>
-
-  <input
-    type="text"
-    style={{
-      width: "22px",
-      height: "22px",
-      textAlign: "center",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
-      padding: "0",
-      fontSize: "14px",
-      boxSizing: "border-box",
-      marginTop:'-2px',
-    }}
-    value={cartProduct.quantity}
-    readOnly
-  />
-
-  <button
-    className="btn btn-success btn-sm"
-    onClick={() => handleIncrement(cartProduct)}
-    style={{
-      borderRadius: '50%',
-      width: '20px',
-      height: '20px',
-      padding: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '18px',
-      lineHeight: '1',
-        marginTop:'5px'
-    }}
-  >
-     <FiPlus size={14} />
-  </button>
-</div>
-</td>
-
-<td>
-  <button
-    className="btn btn-danger btn-sm"
-    onClick={() => removeProduct(cartProduct)}
-    style={{
-      borderRadius: '50%',
-      width: '20px',
-      height: '20px',
-      padding: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '18px',
-      fontWeight: 'bold',
-      lineHeight: '1',
-        marginTop:'5px'
-    }}
-  >
-    <FiX size={14} />
-  </button>
-</td>
-
+                      <td>
+                        <button
+                          className="btn btn-danger btn-sm cartminus"
+                          onClick={() => handleDecrement(cartProduct)}
+                        >
+                          -
+                        </button>
+                        <input
+                          type="text"
+                          style={{ width: "20px" }}
+                          value={cartProduct.quantity}
+                        />
+                        <button
+                          className="btn btn-success btn-sm cartplus"
+                          onClick={() => handleIncrement(cartProduct)}
+                        >
+                          +
+                        </button>
+                      </td>
 
                       {/* <td>{cartProduct.totalAmount}</td> */}
-
+                      <td>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => removeProduct(cartProduct)}
+                        >
+                          x
+                        </button>
+                      </td>
                     </tr>
                   ))
                   : "No Item in Cart"}
@@ -1187,50 +1196,163 @@ const tabStyle = {
           </div>
 
 
-       <div className="pos-action-wrapper">
+          <div className="row">
+            <div className="col-lg-6">
+              <button type="button" className="btn btn-danger w-100 mb-2 p-2">
+                Cancel
+              </button>
+            </div>
 
-  {/* Top Row */}
-  <div className="pos-row">
-    <button className="pos-btns cancel-btn">
-      Cancel
-    </button>
-
+  <div className="col-lg-6 pl-0">
     <button
-      onClick={handleHold}
-      className="pos-btns hold-btn"
-    >
-      Hold
-    </button>
-
-    <button
-      onClick={handleQuickPay}
-      className="pos-btns quickpay-btn"
-      disabled={loadingQuickPay}
-    >
-      {loadingQuickPay ? "Processing..." : "Quick Pay ›"}
-    </button>
-  </div>
-
-  {/* Bottom Row */}
-  <div className="pos-row">
-    <button className="pos-btns ebill-btn">
-      E-Bill
-    </button>
-
-    <button
+      type="button"
       onClick={handlePlaceorder}
-      className="pos-btns placeorder-btn"
-      disabled={loadingPlaceOrder}
+      className="btn btn-warning w-100 mb-2 p-2"
+      disabled={loadingPlaceOrder} // Only disable when Place Order is processing
     >
-      {loadingPlaceOrder ? "Placing Order..." : "Place Order"}
+      {loadingPlaceOrder ? 'Placing Order...' : 'Place Order'}
     </button>
   </div>
 
-</div>
-
+            <div className="col-lg-6">
+              <button
+                type="button"
+                onClick={handleHold}
+                className="btn btn-danger w-100 mb-2 p-2"
+              >
+                Hold
+              </button>
+            </div>
+ <div className="col-lg-6 pl-0">
+    <button
+      type="button"
+      onClick={handleQuickPay}
+      className="btn btn-success w-100 mb-2 p-2"
+      disabled={loadingQuickPay} // Only disable when Quick Pay is processing
+    >
+      {loadingQuickPay ? 'Processing...' : 'Quick Pay'}
+    </button>
   </div>
+          </div>
+        </div>
+      </div>
+      <div className="col-lg-1" style={{ background: "white" }}>
+        <div
+          class="nav flex-column nav-pills"
+          id="v-pills-tab"
+          role="tablist"
+          aria-orientation="vertical"
+        >
+          <a
+            class="nav-link  text-center navleft"
+            id="v-pills-home-tab"
+            data-toggle="pill"
+            href="#v-pills-home"
+            role="tab"
+            aria-controls="v-pills-home"
+            aria-selected="true"
+            style={{ marginTop: "10px" }}
+            onClick={handleClearClick}
+          >
+            <FaHistory className="mr-2" />
+            <br /> Clear
+          </a>
+          <a
+            className="nav-link text-center navleft"
+            id="v-pills-profile-tab"
+            data-toggle="pill"
+            href="#v-pills-profile"
+            role="tab"
+            aria-controls="v-pills-profile"
+            aria-selected="false"
+            onClick={handleTabClick}
+          >
+            <TbToolsKitchen3 className="mr-2" />
+            <br /> KOT
+          </a>
 
- <div className="col-12 col-sm-12 col-md-5 col-lg-7">
+          <a
+            className="nav-link text-center navleft"
+            id="v-pills-messages-tab"
+            data-toggle="pill"
+            href="#v-pills-messages"
+            role="tab"
+            aria-controls="v-pills-messages"
+            aria-selected="false"
+            onClick={handleHoldClick}
+          >
+            <BsFillPauseCircleFill className="mr-2" />
+            <br /> Holding Order
+          </a>
+          <a
+            class="nav-link text-center navleft"
+            id="v-pills-cash-drop-tab"
+            data-toggle="pill"
+            href="#v-pills-cash-drop"
+            role="tab"
+            aria-controls="v-pills-cash-drop"
+            aria-selected="false"
+            onClick={handleDropoutClick}
+          >
+            <FaHandHoldingDroplet className="mr-2" /> <br /> Cash Drop/Out
+          </a>
+          <a
+            class="nav-link text-center navleft"
+            id="v-pills-drawer-tab"
+            data-toggle="pill"
+            href="#v-pills-drawer"
+            role="tab"
+            aria-controls="v-pills-drawer"
+            aria-selected="false"
+          >
+            <RiArchiveDrawerLine className="mr-2" />
+            <br />
+            Open Drawer
+          </a>
+          <a
+            onClick={handleInvoiceClick}
+            class="nav-link text-center navleft"
+            id="v-pills-invoice-tab"
+            data-toggle="pill"
+            href="#v-pills-invoice"
+            role="tab"
+            aria-controls="v-pills-invoice"
+            aria-selected="false"
+          >
+            <LiaFileInvoiceSolid className="mr-2" />
+            <br /> Invoice Report
+          </a>
+
+          <a
+           onClick={handleClosingBalance}
+            class="nav-link text-center navleft"
+            id="v-pills-invoice-tab"
+            data-toggle="pill"
+            href="#v-pills-invoice"
+            role="tab"
+            aria-controls="v-pills-invoice"
+            aria-selected="false"
+          >
+            <LiaFileInvoiceSolid className="mr-2" />
+            <br /> Closing Balance
+          </a>
+
+          <a
+           onClick={handleCancelOrders}
+            class="nav-link text-center navleft"
+            id="v-pills-invoice-tabs"
+            data-toggle="pill"
+            href="#v-pills-invoices"
+            role="tab"
+            aria-controls="v-pills-invoice"
+            aria-selected="false"
+          >
+            <LiaFileInvoiceSolid className="mr-2" />
+            <br /> Cancel Orders
+          </a>
+        </div>
+      </div>
+      <div className="col-sm-7 col-lg-7">
         <div className="tbl-h">
           <ul className="nav nav-tabs nav-justified" role="tablist">
             <li className="nav-item ">
@@ -1268,10 +1390,7 @@ const tabStyle = {
               <li className="nav-item">
                 <a
                   className="nav-link pos "
-                 onClick={() => {
-        handleDinein();
-        setactiveTableTab(1);
-      }}
+                  onClick={handleDinein}
                   data-toggle="tab"
                   href="#table"
                   role="tab"
@@ -1333,41 +1452,41 @@ const tabStyle = {
                 </a>
               </li>
             )}
-       {tabEnabled.takeaway && (
-  <li className="nav-item">
-    <a
-      className="nav-link pos"
-      onClick={handleTakeway}
-      data-toggle="tab"
-      href="#foodmenu"
-      role="tab"
-      aria-controls="duck2"
-      aria-selected="true"
-    >
-      <MdOutlineTakeoutDining className="mr-2" />
-      Take Away
-    </a>
-  </li>
-)}
+            {tabEnabled.takeaway && (
+              <li className="nav-item">
+                <a
+                  className="nav-link pos"
+                  onClick={handleTakeway}
+                  data-toggle="tab"
+                  href="#dinein"
+                  role="tab"
+                  aria-controls="duck2"
+                  aria-selected="true"
+                >
+                  <MdOutlineTakeoutDining className="mr-2" />
+                  Take Away
+                </a>
+              </li>
+            )}
             {showFoodMenuTab && (
-             <li className="nav-item">
-    <a
-      className={`nav-link pos ${showFoodMenuTab ? 'active show' : ''}`}
-      onClick={handleMenu}
-      data-toggle="tab"
-      href="#foodmenu"
-      role="tab"
-      aria-controls="duck2"
-      aria-selected={showFoodMenuTab}
-    >
-      <IoFastFoodSharp className="mr-2" />
-      Food Menu
-    </a>
-  </li>
+              <li className="nav-item">
+                <a
+                  className="nav-link pos"
+                  onClick={handleMenu}
+                  data-toggle="tab"
+                  href="#foodmenu"
+                  role="tab"
+                  aria-controls="duck2"
+                  aria-selected="true"
+                >
+                  <IoFastFoodSharp className="mr-2" />
+                  Food Menu
+                </a>
+              </li>
             )}
           </ul>
         </div>
-        <div className="tab-content mt-3" style={{overflowY: 'scroll' }}>
+        <div className="tab-content mt-3" style={{ maxHeight: '800px', overflowY: 'scroll' }}>
 
           <div
             className="tab-pane active"
@@ -1385,26 +1504,26 @@ const tabStyle = {
               onChange={handleSearchWaiter}
             />{" "}
             <br />
-          <div className="row">
-  {filteredWaiters.map((wait, index) => {
-    const isSelected = selectWaiter === wait;
-
-    return (
-      <div key={index} className="col-6 col-sm-4 col-md-3 mb-3">
-        <div
-          className={`waiter-box ${isSelected ? "active" : ""}`}
-          onClick={() => handleWaiter(wait)}
-        >
-          <TbChefHat className="waiter-icon" />
-          <h6 className="waiter-name">
-            {wait.firstname} {wait.lastname}
-          </h6>
-        </div>
-      </div>
-    );
-  })}
-</div>
-
+            <div className="row">
+              {filteredWaiters.map((wait, index) => (
+                <div
+                  key={index}
+                  className={`col-sm-3 col-md-3 ${selectWaiter === wait ? "disabled" : ""
+                    }`}
+                >
+                  <div
+                    className={`menu-box ${selectWaiter ? "read-only" : "selectable"
+                      }`}
+                    onClick={() => handleWaiter(wait)}
+                  >
+                    <h6>
+                      <TbChefHat className="mr-2" /> <br />
+                      {wait.firstname}{wait.lastname}
+                    </h6>
+                  </div>
+                </div>
+              ))}
+            </div>
 
 
 
@@ -1413,102 +1532,84 @@ const tabStyle = {
           </div>
 
 
-       {enableDinein && (
-  <div
-    className="tab-pane"
-    id="table"
-    role="tabpanel"
-    aria-labelledby="duck-tab"
-  >
-    {/* Hide table list when table is selected */}
-    {!selectTable ? (
-      <>
-        <input
-          type="text"
-          placeholder="Search Tables..."
-          value={searchTable}
-          className="form-control"
-          onChange={handleSearchTable}
-        />
-        <br />
-        <div className="row">
-          {filteredTables.map((tables, index) => (
+         {enableDinein && (
             <div
-              key={index}
-              className={`col-sm-3 col-md-3 ${
-                selectTable === tables ? "disabled" : ""
-              }`}
+              className="tab-pane"
+              id="table"
+              role="tabpanel"
+              aria-labelledby="duck-tab"
             >
-              <div className="card">
-                <div
-                  className={`menu-box ${
-                    selectTable ? "read-only" : "selectable"
-                  }`}
-                >
-                  <h6>
-                    <SiTablecheck className="mr-2" />
-                    <br />
-                    {tables.tablename}
-                  </h6>
-                  <p>SeatCapacity:{tables.seatcapacity}</p>
-                  <p>Available Seat:{tables.availableSeat}</p>
-                </div>
+              <input
+                type="text"
+                placeholder="Search Tables..."
+                value={searchTable}
+                className="form-control"
+                onChange={handleSearchTable}
+              />
+              <br />
+              <div className="row">
+                {filteredTables.map((tables, index) => (
+                  <div
+                    key={index}
+                    className={`col-sm-3 col-md-3 ${selectTable === tables ? "disabled" : ""
+                      }`}
+                  >
+                    <div className="card">
 
-                <div className="card-footer">
-                  <div className="flex-row-container">
-                    <div className="flex-row-item mr-2">
-                      <input
-                        type="text"
-                        name="numberofperson"
-                        value={numberofperson[tables._id] || ""}
-                        onChange={(e) => {
-                          handleNumberofPersonChange(e, tables._id);
-                        }}
-                        className="form-control"
-                        placeholder="No Of Person"
-                        readOnly={tables.availableSeat === 0}
-                      />
-                    </div>
-                    <div className="flex-row-item">
-                      <a
-                        className={`btn btn-outline-primary tablebtn ${
-                          !isValidNumber(tables._id) ||
-                          tables.availableSeat === 0 ||
-                          parseInt(numberofperson[tables._id] || 0) >
-                          parseInt(tables.seatcapacity)
-                            ? "disabled"
-                            : ""
-                        }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleTable(tables);
-                        }}
+                      <div
+                        className={`menu-box ${selectTable ? "read-only" : "selectable"
+                          }`}
                       >
-                        Add
-                      </a>
+                        <h6>
+                          <SiTablecheck className="mr-2" />
+                          <br />
+                          {tables.tablename}
+                        </h6>
+                        <p>SeatCapacity:{tables.seatcapacity}</p>
+                        <p>Avilable Seat:{tables.availableSeat}</p>
+                      </div>
+
+                      <div className="card-footer">
+                        <div class="flex-row-container">
+                          <div class="flex-row-item">
+                            <input
+                              type="text"
+                              name="numberofperson"
+                              value={numberofperson[tables._id]}
+                              onChange={(e) => {
+                                // setNumberofPerson(e.target.value);
+                                handleNumberofPersonChange(e, tables._id);
+                              }}
+                              className="form-control"
+                              placeholder="No Of Person"
+                              readOnly={tables.availableSeat === 0}
+                            />
+                          </div>
+                          <div class="flex-row-item">
+                            <a
+                              className={`btn btn-outline-primary ${!isValidNumber(tables._id) ||
+                                tables.availableSeat === 0 ||
+                                parseInt(numberofperson[tables._id]) >
+                                parseInt(tables.seatcapacity)
+                                ? "disabled"
+                                : ""
+                                }`}
+                              onClick={(e) => {
+                                setSelectTable(tables);
+                                handleTable(tables);
+                              }}
+                            >
+                              Add
+                            </a>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </>
-    ) : (
-      // Show selected table info when table is selected
-      <div className="selected-table-info">
-
-          <p>
-
-            Selected Table: {selectTable.tablename}  Number of Persons: {numberofperson[selectTable._id]}
-          </p>
-
-
-
-      </div>
-    )}
-  </div>
-)}
+          )}
 
           <div
             className="tab-pane "
@@ -1581,140 +1682,113 @@ const tabStyle = {
               ))}
             </div>
           </div>
-{enableFoodmenu && (
-  <div
-  className={`tab-pane ${showFoodMenuTab ? 'active show' : ''}`}
-  id="foodmenu"
-  role="tabpanel"
-  style={{ display: showFoodMenuTab ? 'block' : 'none' }}
->
-    <div className="tbl-h">
-      <div className="form-group">
-        <input
-          type="text"
-          placeholder="Search foodmenu..."
-          value={searchTerm}
-          onChange={handleSearch}
-          className="form-control"
-        />
+          {enableFoodmenu && (
+            <div
+              className="tab-pane "
+              id="foodmenu"
+              role="tabpanel"
+              aria-labelledby="duck-tab"
+            >
+              <div className="tbl-h">
+                <div className="form-group">
+                  <input
+                    type="text"
+                    placeholder="Search foodmenu..."
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    className="form-control"
+                  />
+                </div>
+
+       <div className="tab-scroll-container">
+
+      <div className="nav-container">
+        <ul className="nav nav-pills flex-row shdw-lft" id="myTab" role="tablist">
+          {distinctCategories.map((category, index) => (
+            <li className="nav-item" key={index}>
+              <a
+                className={`nav-item nav-link ${index === activeTab ? "active" : ""}`}
+                onClick={() => handleTabsClick(index)}
+              >
+                {category}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
-
-      {/* Vertical Tabs Layout */}
-      <div className="row" style={{ margin: 0 }}>
-        {/* Left Side - Fixed Vertical Categories with Scroll */}
-        <div className="col-md-3" style={{ paddingRight: 0 }}>
-          <div
-            className="nav flex-column nav-pills shdw-lft"
-            id="v-tabs"
-            role="tablist"
-            aria-orientation="vertical"
-            style={{
-              height: '500px',
-              maxHeight: '500px',
-              minHeight: '500px',      /* Add min-height */
-              overflowY: 'scroll',
-              overflowX: 'hidden',
-              position: 'relative',    /* Changed from sticky/fixed */
-              top: '0',
-              padding: '10px 5px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px 0 0 8px',
-              display: 'block',        /* Ensure block display */
-            }}
-          >
-            {distinctCategories && distinctCategories.length > 0 ? (
-              distinctCategories.map((category, index) => (
-                <a
-                  key={index}
-                  className={`nav-link text-left ${index === activeTab ? "active" : ""}`}
-                  onClick={() => handleTabsClick(index)}
-                  style={{
-                    cursor: 'pointer',
-                    marginBottom: '5px',
-                    borderRadius: '5px',
-                    whiteSpace: 'normal',
-                    wordWrap: 'break-word',
-                    textAlign: 'left',
-                    fontSize: '12px',
-                    display: 'block',   /* Ensure block display */
-                    width: '100%',      /* Full width */
-                  }}
-                >
-                  {category}
-                </a>
-              ))
-            ) : (
-              <div className="text-center p-3">No categories found</div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Side - Menu Items */}
-        <div className="col-md-9" style={{ paddingLeft: 0 }}>
-          <div
-            className="tab-content p-3"
-            id="v-tabContents"
-            style={{
-              height: '500px',
-              maxHeight: '500px',
-              minHeight: '500px',      /* Add min-height */
-              overflowY: 'scroll',
-              backgroundColor: '#fff',
-              borderRadius: '0 8px 8px 0',
-              border: '1px solid #dee2e6'
-            }}
-          >
-            {isLoading ? (
-              <div className="text-center p-5">Loading...</div>
-            ) : (
-              <div className="row">
-                {foodCategory.length > 0 &&
-                  foodCategory
-                    .filter(
-                      (item) =>
-                        item.foodcategory.foodcategoryname ===
-                          distinctCategories[activeTab] &&
-                        item.foodmenuname
-                          .toLowerCase()
-                          .includes(searchTerm.toLowerCase())
-                    )
-                    .map((menu, index) => (
-                      <div className="col-sm-6 col-md-4 col-lg-3" key={index}>
-                     <div className="foodmenu-box" onClick={() => addProductToCart(menu)}>
-  <div className="foodmenu-div">
-    <img src={`/uploads/${menu.photo}`} className="foodimg" alt={menu.foodmenuname} />
-    <div className="menu-details">
-      <h6 className="mt-2">{menu.foodmenuname}</h6>
-      <p>AED: {menu.salesprice}</p>
     </div>
-  </div>
-</div>
-                      </div>
-                    ))}
-                {foodCategory.filter(
-                  (item) =>
-                    item.foodcategory.foodcategoryname ===
-                      distinctCategories[activeTab] &&
-                    item.foodmenuname
-                      .toLowerCase()
-                      .includes(searchTerm.toLowerCase())
-                ).length === 0 && (
-                  <div className="col-12 text-center p-4">
-                    No items found in this category
+
+              </div>
+
+              <div className="tab-content p-3" id="myTabContents">
+                {isLoading ? (
+                  "Loading"
+                ) : (
+                  <div className="row">
+                    {foodCategory.length > 0 &&
+                      foodCategory
+                        .filter(
+                          (item) =>
+                            item.foodcategory.foodcategoryname ===
+                            distinctCategories[activeTab] &&
+                            item.foodmenuname
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase())
+                        )
+                        .map((menu, index) => (
+                          <div className="col-sm-3 col-sm-3" key={index}>
+                            <div
+                              className="menu-box"
+                              onClick={() => addProductToCart(menu)}
+                            >
+                              <div className="menu-div">
+                                {/* <img src={`/uploads/${menu.photo}`} className=" foodimg" /> */}
+                                <h6 className="mt-2">{menu.foodmenuname}</h6>
+                                <p>Price: {menu.salesprice}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            </div>
+          )}
         </div>
       </div>
 
-       <PosNeworderKotModal
+      <div class="modal" id="print-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Order Details</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-dismiss="modal"
+              >
+                Close
+              </button>
+              <button type="button" class="btn btn-primary" id="print-button">
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* KOTMODAl */}
+      <PosNeworderKotModal
         isModalOpen={isModalOpen}
         setModalOpen={setModalOpen}
       />
@@ -1746,7 +1820,24 @@ const tabStyle = {
     setModalCancelOrders={setModalCancelOrders}
     />
 
-    {showPrintModal && (
+
+
+
+
+
+{/* <PrintComponent ref={componentRef} response={response} /> */}
+
+    {/* <PosOrderPrint
+     orderData={orderData}
+      showPrintModal={showPrintModal}
+      setShowPrintModal={setShowPrintModal}
+
+    /> */}
+            <div>
+{/* Print Preview Modal */}
+{/* Print Preview Modal */}
+{/* Print Preview Modal */}
+{showPrintModal && (
   <>
     <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
       <div className="modal-dialog modal-lg" role="document">
@@ -1914,12 +2005,8 @@ const tabStyle = {
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => {
-      setShowPrintModal(false);
-      handleClearClick(); // Add this to clear everything when closing
-    }}
+              onClick={() => setShowPrintModal(false)}
             >
-
               <i className="fas fa-times mr-1"></i> Close
             </button>
             <button
@@ -1936,8 +2023,9 @@ const tabStyle = {
     <div className="modal-backdrop fade show"></div>
   </>
 )}
-</div>
+      </div>
 
+    </div>
   );
 };
 

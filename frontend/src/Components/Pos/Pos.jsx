@@ -20,7 +20,7 @@ const Pos =() =>{
         setActiveTab(tabName);
       };
     return (
-     
+
             <div className="container-fluid">
                     <div className="division">
                     <div className="row">
@@ -31,7 +31,7 @@ const Pos =() =>{
             <div className="menumain">
               <ul className="nav nav-tabs nav-justified" role="tablist">
                 <li className="nav-item ">
-                 
+
                 <Link
                     className={`nav-link ${activeTab === 'neworder' ? 'active' : ''}`}
                     to="/pos"
@@ -42,30 +42,30 @@ const Pos =() =>{
                 </li>
                 <li className="nav-item">
 
-                 
+
                     <Link className="nav-link "  data-toggle="tab"
                    to="/runningorder"
                     role="tab"
                     aria-controls="neworder" ><FaHistory className="mr-2" />Running Order</Link>
                 </li>
-               
-                
+
+
                 <li className="nav-item">
-              
+
                     <Link className="nav-link "  data-toggle="tab"
                    to="/onlineorder"
                     role="tab"
                     aria-controls="neworder" ><MdBookOnline  className="mr-1" /> Online Order</Link>
                 </li>
                 <li className="nav-item">
-               
+
                    <Link className="nav-link "  data-toggle="tab"
                    to="/deliverysession"
                     role="tab"
-                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />  Delivery Settlment</Link>
+                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" /> Mess Management</Link>
                 </li>
                 <li className="nav-item">
-               
+
                    <Link className="nav-link "  data-toggle="tab"
                    to="/settlementreport"
                     role="tab"
@@ -111,7 +111,7 @@ const Pos =() =>{
                   <FaRegCalendarAlt className="mr-2" /> Invoice Report
                   </a>
                 </li> */}
-               
+
               </ul>
             </div>
           </div>
@@ -122,7 +122,7 @@ const Pos =() =>{
         <div className={`tab-pane ${activeTab === 'neworder' ? 'active' : ''}`} id="neworder" role="tabpanel" aria-labelledby="neworder-tab">
             <PosNewOrder  />
           </div>
-          
+
         </div>
       </div>
     </div>

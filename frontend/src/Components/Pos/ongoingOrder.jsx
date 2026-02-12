@@ -21,7 +21,7 @@ const OngoingOrder =() =>{
         setActiveTab(tabName);
       };
     return (
-     
+
             <div className="container-fluid">
                     <div className="division">
                     <div className="row">
@@ -32,7 +32,7 @@ const OngoingOrder =() =>{
             <div className="menumain">
               <ul className="nav nav-tabs nav-justified" role="tablist">
                 <li className="nav-item ">
-                 
+
                   <Link className="nav-link "  data-toggle="tab"
                    to="/pos"
                     role="tab"
@@ -56,8 +56,8 @@ const OngoingOrder =() =>{
                     role="tab"
                     aria-controls="neworder" ><FaHistory className="mr-2" />Running Order</Link>
                 </li>
-               
-                
+
+
                 <li className="nav-item">
                 {/* <a
                     className={`nav-link ${activeTab === 'onlineorder' ? 'active' : ''}`}
@@ -90,7 +90,7 @@ const OngoingOrder =() =>{
                    <Link className="nav-link "  data-toggle="tab"
                    to="/deliverysession"
                     role="tab"
-                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />  Delivery Settlement</Link>
+                    aria-controls="neworder" >  <FaRegCalendarAlt className="mr-2" />Mess Management</Link>
                 </li>
                 <li className="nav-item">
                 {/* <a
@@ -149,7 +149,7 @@ const OngoingOrder =() =>{
                   <FaRegCalendarAlt className="mr-2" /> Invoice Report
                   </a>
                 </li> */}
-               
+
               </ul>
             </div>
           </div>
@@ -160,7 +160,7 @@ const OngoingOrder =() =>{
         <div className={`tab-pane ${activeTab === 'neworder' ? 'active' : ''}`} id="neworder" role="tabpanel" aria-labelledby="neworder-tab">
             <PosRunningOrder  />
           </div>
-          
+
         </div>
       </div>
     </div>
