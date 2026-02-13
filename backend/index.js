@@ -68,8 +68,8 @@ app.listen(PORT, () => {
 //   allowedHeaders: ['Content-Type'],
 // }));
 
-  app.use(cors({ origin: 'https://posburp.vercel.app' }));
-const allowedOrigins = ['https://posburp.vercel.app'];
+  app.use(cors({ origin: 'https://posburp-8xrf.vercel.app/' }));
+const allowedOrigins = ['https://posburp-8xrf.vercel.app/'];
 
 app.use(cors({
   origin: function (origin, callback) {
