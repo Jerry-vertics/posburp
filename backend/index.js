@@ -68,19 +68,18 @@ app.listen(PORT, () => {
 //   allowedHeaders: ['Content-Type'],
 // }));
 
-  app.use(cors({ origin: 'https://posburp-8xrf.vercel.app/' }));
+ app.use(cors({ origin: 'https://posburp-8xrf.vercel.app/' }));
 const allowedOrigins = ['https://posburp-8xrf.vercel.app/'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Check if the origin is in the allowedOrigins array or if it's not defined (e.g., a same-origin request)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS if you're handling preflight requests
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
 
