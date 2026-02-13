@@ -39,51 +39,25 @@ app.listen(PORT, () => {
 });
 
 
-// app.use((req, res, next) => {
-//     res.header('Access-Control-Allow-Origin', 'https://monumental-sherbet-d68a44.netlify.app');
-//     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-//     res.header('Access-Control-Allow-Headers', 'Content-Type');
-//     next();
-// });
-// app.use((req, res, next) => {
-//   res.header('Access-Control-Allow-Origin', 'https://monumental-sherbet-d68a44.netlify.app');
-//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');  // Include OPTIONS if you're handling preflight requests
-//   res.header('Access-Control-Allow-Headers', 'Content-Type');
-//   next();
-// });
 
-//   app.use(cors({ origin: 'https://monumental-sherbet-d68a44.netlify.app/' }));
-// const allowedOrigins = ['https://monumental-sherbet-d68a44.netlify.app'];
-
-// app.use(cors({
-//   origin: function (origin, callback) {
-//     // Check if the origin is in the allowedOrigins array or if it's not defined (e.g., a same-origin request)
-//     if (!origin || allowedOrigins.includes(origin)) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   },
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS if you're handling preflight requests
-//   allowedHeaders: ['Content-Type'],
-// }));
-
-  app.use(cors({ origin: 'https://posburp.vercel.app' }));
-const allowedOrigins = ['https://posburp.vercel.app'];
+const allowedOrigins = ['https://posburp-8xrf.vercel.app']; // No trailing slash
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Check if the origin is in the allowedOrigins array or if it's not defined (e.g., a same-origin request)
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log('Origin blocked by CORS:', origin); // Add this for debugging
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS if you're handling preflight requests
-  allowedHeaders: ['Content-Type'],
+  credentials: true, // Add this since you're using cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'] // Add Authorization if needed
 }));
-
 
 //app.use(cors());
 app.use(express.json());
