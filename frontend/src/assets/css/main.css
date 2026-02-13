@@ -84,6 +84,18 @@
     font-weight: 700;
     padding-top: 25px;
 }
+
+.main-content .nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link .posdinein.active {
+    border: 0;
+    background: rgb(0, 255, 106) !important;
+    background: linear-gradient(320deg, rgb(0, 255, 0) 0%, rgb(8, 225, 19) 100%);
+    border-radius: 10px;
+    margin-top: -5px;
+    height: 115%;
+    color: #fff;
+    font-weight: 700;
+    padding-top: 25px;
+}
 .w-55{
     width: 90px !important;
 }
@@ -312,3 +324,4 @@ flex-columns {
   background-color:linear-gradient(320deg, #c82333 0%, #c82333 100%) !important ;
   color: #fff;
 }
+

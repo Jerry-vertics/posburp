@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from 'sweetalert2';
+import { MessDailyPunching } from "./MessDailyPunching";
+import MessCustomerSubscription from "./MessCustomerSubscription";
+import { MessManageHold } from "./MessManageHold";
 
 export const PosMessmanage = () => {
   const navigate = useNavigate();
@@ -186,178 +189,14 @@ export const PosMessmanage = () => {
           {/* Daily Punching Tab */}
           {activeTab === 'punch' && (
             <div className="tab-pane fade show active" id="punch-content">
-              <div className="row">
-                <div className="col-md-5">
-                  <div className="card p-4">
-                    <h5 className="mb-3">Scan or Search</h5>
-                    <div className="input-group mb-3">
-                      <span className="input-group-text">
-                        <i className="bi bi-search"></i>
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Mobile Number or Name"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                      <button className="btn btn-success" onClick={handleQRScan}>
-                        Scan QR
-                      </button>
-                    </div>
-                    <div className="qr-placeholder mt-2">
-                      <p className="text-muted">
-                        <i className="bi bi-camera"></i> Camera Active for QR Scan
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-7">
-                  <div className="card p-4 bg-white">
-                    <div className="d-flex align-items-center mb-4">
-                      <div className="bg-secondary rounded-circle me-3" style={{ width: '80px', height: '80px' }}></div>
-                      <div>
-                        <h3 className="mb-0">{selectedCustomer.name}</h3>
-                        <span className="badge bg-success">{selectedCustomer.status}</span>
-                        <span className="text-muted ms-2">ID: {selectedCustomer.id}</span>
-                      </div>
-                    </div>
-                    <div className="row g-3">
-                      <div className="col-12">
-                        <div className="alert alert-info py-2">
-                          <strong>Plan:</strong> {selectedCustomer.plan} |
-                          <strong>Remaining:</strong> {selectedCustomer.remainingMeals} Meals
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <button
-                          className="btn btn-outline-secondary w-100 punch-btn"
-                          disabled={selectedCustomer.meals.breakfast.disabled}
-                        >
-                          Breakfast<br />
-                          <small>{selectedCustomer.meals.breakfast.done ? `Done at ${selectedCustomer.meals.breakfast.time}` : selectedCustomer.meals.breakfast.time}</small>
-                        </button>
-                      </div>
-                      <div className="col-md-4">
-                        <button
-                          className="btn btn-success w-100 punch-btn"
-                          onClick={handlePunchLunch}
-                          disabled={selectedCustomer.meals.lunch.disabled}
-                        >
-                          PUNCH LUNCH<br />
-                          <small>{selectedCustomer.meals.lunch.time}</small>
-                        </button>
-                      </div>
-                      <div className="col-md-4">
-                        <button
-                          className="btn btn-outline-primary w-100 punch-btn"
-                          disabled={selectedCustomer.meals.dinner.disabled}
-                        >
-                          Dinner<br />
-                          <small>{selectedCustomer.meals.dinner.time}</small>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <MessDailyPunching />
             </div>
           )}
 
           {/* New Subscription Tab */}
           {activeTab === 'subscribe' && (
             <div className="tab-pane fade show active" id="subscribe-content">
-              <div className="card p-4">
-                <h4>Enroll New Customer</h4>
-                <form className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Customer Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Full Name"
-                      name="name"
-                      value={newSubscription.name}
-                      onChange={handleSubscriptionChange}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Mobile Number</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      placeholder="05x xxxxxxx"
-                      name="mobile"
-                      value={newSubscription.mobile}
-                      onChange={handleSubscriptionChange}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Select Package</label>
-                    <select
-                      className="form-select"
-                      name="package"
-                      value={newSubscription.package}
-                      onChange={handleSubscriptionChange}
-                    >
-                      <option>Monthly (3 Meals/Day)</option>
-                      <option>Monthly (2 Meals/Day)</option>
-                      <option>Weekly (Lunch Only)</option>
-                    </select>
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Start Date</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="startDate"
-                      value={newSubscription.startDate}
-                      onChange={handleSubscriptionChange}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Expiry Date (Auto)</label>
-                    <input
-                      type="text"
-                      className="form-control bg-light"
-                      name="expiryDate"
-                      value={newSubscription.expiryDate}
-                      readOnly
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Total Amount</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="totalAmount"
-                      value={newSubscription.totalAmount}
-                      readOnly
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Payment Received</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Amount Paid"
-                      name="paidAmount"
-                      value={newSubscription.paidAmount}
-                      onChange={handleSubscriptionChange}
-                    />
-                  </div>
-                  <div className="col-12 text-end mt-4">
-                    <button type="button" className="btn btn-secondary me-2">Cancel</button>
-                    <button
-                      type="button"
-                      className="btn btn-success px-5"
-                      onClick={handleActivateSubscription}
-                    >
-                      Activate & Print Card
-                    </button>
-                  </div>
-                </form>
-              </div>
+              <MessCustomerSubscription />
             </div>
           )}
 
@@ -431,58 +270,7 @@ export const PosMessmanage = () => {
           {/* Manage/Hold Tab */}
           {activeTab === 'manage' && (
             <div className="tab-pane fade show active" id="manage-content">
-              <div className="card p-4">
-                <h4>Manage Active Subscriptions</h4>
-                <div className="table-responsive mt-3">
-                  <table className="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Customer</th>
-                        <th>Remaining</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>#8801</td>
-                        <td>Ahmed Abdullah</td>
-                        <td>42 Meals</td>
-                        <td><span className="badge bg-success">Active</span></td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-warning me-1"
-                            onClick={() => handleHoldSubscription('#8801')}
-                          >
-                            Hold
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleRenewSubscription('#8801')}
-                          >
-                            Renew
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>#8805</td>
-                        <td>John Doe</td>
-                        <td>10 Meals</td>
-                        <td><span className="badge bg-danger">On Hold</span></td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => handleResumeSubscription('#8805')}
-                          >
-                            Resume
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+             <MessManageHold />
             </div>
           )}
         </div>

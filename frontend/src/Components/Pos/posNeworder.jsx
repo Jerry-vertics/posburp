@@ -225,15 +225,48 @@ const [loadingQuickPay, setLoadingQuickPay] = useState(false);
     setactiveTableTab(1);
   };
 
+  // Add this useEffect to handle enabling food menu when both customer and delivery person are selected
+useEffect(() => {
+  if (options === "Delivery" && selectCustomer && selectDelivery) {
+    setEnableFoodmenu(true);
+    setShowFoodMenuTab(true);
+    setActiveTab(0); // Activate food menu tab
+
+    // Force click on food menu tab
+    setTimeout(() => {
+      const foodMenuTab = document.querySelector('a[href="#foodmenu"]');
+      if (foodMenuTab) {
+        foodMenuTab.click();
+      }
+    }, 100);
+  }
+}, [selectCustomer, selectDelivery, options]);
+
+  // const handleWaiter = (details) => {
+  //   setSelectWaiter(details);
+  //   setTabEnabled({
+  //     dineIn: true,
+  //     takeaway: true,
+  //     delivery: true,
+  //   });
+  //    setActiveTab(1);
+  // };
+
   const handleWaiter = (details) => {
-    setSelectWaiter(details);
-    setTabEnabled({
-      dineIn: true,
-      takeaway: true,
-      delivery: true,
-    });
-     setActiveTab(1);
-  };
+  setSelectWaiter(details);
+  setTabEnabled({
+    dineIn: true,
+    takeaway: true,
+    delivery: true,
+  });
+
+  // If it's a delivery order and we already have customer/delivery selected
+  if (options === "Delivery" && selectCustomer && selectDelivery) {
+    setActiveTab(0); // Go to food menu
+  } else {
+    setActiveTab(1);
+  }
+};
 //  console.log("selectWaiter is not empty:", selectWaiter);
 const handleTable = (tables) => {
   const personCount = numberofperson[tables._id];
@@ -318,16 +351,17 @@ const handleTakeway = (e) => {
 };
 
   const handleDelivery = (e) => {
-    setTabEnabled({
-      dineIn: false,
-      delivery: true,
-      takeaway: false,
-    });
-    setOptions("Delivery");
-    setShowCustomerTab(true);
-    setShowDeliveryTab(true);
-  };
-
+  setTabEnabled({
+    dineIn: false,
+    delivery: true,
+    takeaway: false,
+  });
+  setOptions("Delivery");
+  setShowCustomerTab(true);
+  setShowDeliveryTab(true);
+  setEnableFoodmenu(false); // Don't enable food menu until both are selected
+  setShowFoodMenuTab(false);
+};
   const handleCustomer = (e) => {
     setShowDeliveryTab(false);
   };
@@ -977,6 +1011,9 @@ const tabStyle = {
 };
   return (
     <div className="row">
+
+
+
   <div className="col-12 col-sm-12 col-md-3 col-lg-1">
    <div className="pos-menu">
 
@@ -1267,7 +1304,7 @@ const tabStyle = {
             {tabEnabled.dineIn && (
               <li className="nav-item">
                 <a
-                  className="nav-link pos "
+                  className="nav-link pos posdinein "
                  onClick={() => {
         handleDinein();
         setactiveTableTab(1);
@@ -1446,8 +1483,8 @@ const tabStyle = {
                   }`}
                 >
                   <h6>
-                    <SiTablecheck className="mr-2" />
-                    <br />
+
+
                     {tables.tablename}
                   </h6>
                   <p>SeatCapacity:{tables.seatcapacity}</p>
@@ -1510,77 +1547,127 @@ const tabStyle = {
   </div>
 )}
 
-          <div
-            className="tab-pane "
-            id="customer"
-            role="tabpanel"
-            aria-labelledby="duck-tab"
-          >
-            <input
-              type="text"
-              placeholder="Search Customers..."
-              value={searchCustomer}
-              className="form-control"
-              onChange={handleSearchCustomer}
-            />
-            <br />
-            <div className="row">
-              {filteredCustomers.map((customer, index) => (
-                <div className="col-sm-3 col-md-3">
-                  <div
-                    className="menu-box"
-                    onClick={(e) => {
-                      setSelectCustomer(customer);
-                      setShowFoodMenuTab(true);
-                      setShowDeliveryTab(false);
-                    }}
-                  >
-                    <h6>
-                      <FaUserAlt className="mr-2" />
-                      <br />
-                      {customer.customername}
-                    </h6>
-                  </div>
-                </div>
-              ))}
+       <div
+  className="tab-pane"
+  id="customer"
+  role="tabpanel"
+  aria-labelledby="duck-tab"
+>
+  {!selectCustomer ? (
+    <>
+      <input
+        type="text"
+        placeholder="Search Customers..."
+        value={searchCustomer}
+        className="form-control"
+        onChange={handleSearchCustomer}
+      />
+      <br />
+      <div className="row">
+        {filteredCustomers.map((customer, index) => (
+          <div className="col-sm-3 col-md-3" key={index}>
+            <div
+              className="menu-box"
+              onClick={(e) => {
+                setSelectCustomer(customer);
+                setShowCustomerTab(false);
+                setShowDeliveryTab(true);
+              }}
+            >
+              <h6>
+                <FaUserAlt className="mr-2" />
+                <br />
+                {customer.customername}
+              </h6>
             </div>
           </div>
-          <div
-            className="tab-pane "
-            id="delivery"
-            role="tabpanel"
-            aria-labelledby="duck-tab"
-          >
-            <input
-              type="text"
-              placeholder="Search Delivery..."
-              value={searchDeliveryPerson}
-              className="form-control"
-              onChange={handleSearchDelivery}
-            />
-            <br />
-            <div className="row">
-              {filteredDelivery.map((delivery, index) => (
-                <div className="col-sm-3 col-md-3">
-                  <div
-                    className="menu-box"
-                    onClick={(e) => {
-                      setSelectDelivery(delivery);
-                      setShowFoodMenuTab(true);
-                      setShowCustomerTab(false);
-                    }}
-                  >
-                    <h6>
-                      <MdDeliveryDining className="mr-2" />
-                      <br />
-                      {delivery.firstname}{delivery.lastname}
+        ))}
+      </div>
+    </>
+  ) : (
+    <div className="selected-customer-info">
+      <p>Selected Customer: {selectCustomer.customername}</p>
+      <button
+        className="btn btn-sm btn-primary"
+        onClick={() => {
+          setSelectCustomer(null);
+          setShowCustomerTab(true);
+          setEnableFoodmenu(false);
+          setShowFoodMenuTab(false);
+        }}
+      >
+        Change Customer
+      </button>
+    </div>
+  )}
+</div>
+        <div
+  className="tab-pane"
+  id="delivery"
+  role="tabpanel"
+  aria-labelledby="duck-tab"
+>
+  {!selectDelivery ? (
+    <>
+      <input
+        type="text"
+        placeholder="Search Delivery..."
+        value={searchDeliveryPerson}
+        className="form-control"
+        onChange={handleSearchDelivery}
+      />
+      <br />
+      <div className="row">
+        {filteredDelivery.map((delivery, index) => (
+          <div className="col-sm-3 col-md-3" key={index}>
+            <div
+              className="menu-box"
+              onClick={(e) => {
+                setSelectDelivery(delivery);
+                setShowDeliveryTab(false);
 
-                    </h6>
-                  </div>
-                </div>
-              ))}
+                // Enable food menu if customer is already selected
+                if (selectCustomer && selectCustomer._id) {
+                  setEnableFoodmenu(true);
+                  setShowFoodMenuTab(true);
+                  setActiveTab(0);
+
+                  setTimeout(() => {
+                    const foodMenuTab = document.querySelector('a[href="#foodmenu"]');
+                    if (foodMenuTab) {
+                      foodMenuTab.click();
+                    }
+                  }, 100);
+                }
+              }}
+            >
+              <h6>
+                <MdDeliveryDining className="mr-2" />
+                <br />
+                {delivery.firstname} {delivery.lastname}
+              </h6>
             </div>
           </div>
+        ))}
+      </div>
+    </>
+  ) : (
+    <div className="selected-delivery-info">
+      <p>Selected Delivery: {selectDelivery.firstname} {selectDelivery.lastname}</p>
+      <button
+        className="btn btn-sm btn-primary"
+        onClick={() => {
+          setSelectDelivery(null);
+          setShowDeliveryTab(true);
+          setEnableFoodmenu(false);
+          setShowFoodMenuTab(false);
+        }}
+      >
+        Change Delivery Person
+      </button>
+    </div>
+  )}
+</div>
 {enableFoodmenu && (
   <div
   className={`tab-pane ${showFoodMenuTab ? 'active show' : ''}`}
