@@ -25,7 +25,7 @@ const Pos =() =>{
                     <div className="division">
                     <div className="row">
                         <div className="col-md-2">
-                        <div className="w-100 d-inline-block text-center pb-4"> <Link to="/dashboard" ><img src="assets/images/pos/burps.png" className="img-fluid" /></Link> </div>
+                        <div className="w-100 d-inline-block text-center pt-3"> <Link to="/dashboard" ><img src="assets/images/pos/burps.png" className="img-fluid" /></Link> </div>
                         </div>
                         <div className="col-md-10 main-content">
             <div className="menumain">

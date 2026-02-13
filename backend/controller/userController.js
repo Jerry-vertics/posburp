@@ -22,53 +22,116 @@ const createUser =asyncHandler(async(req,res) =>{
 });
 
 
-const loginUserController =asyncHandler(async(req,res) =>{
+// const loginUserController =asyncHandler(async(req,res) =>{
 
-    const { email,password} =req.body;
-    const findUser =await User.findOne({email});
+//     const { email,password} =req.body;
+//     const findUser =await User.findOne({email});
 
-    if(findUser && (await findUser.isPasswordMatched(password)))
-    {
-        const refreshToken = await generateRefreshToken(findUser?._id);
-        const currentDateTime = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-        const shiftToken = `${findUser?.firstname}-${findUser?.lastname}-${currentDateTime}`;
+//     if(findUser && (await findUser.isPasswordMatched(password)))
+//     {
+//         const refreshToken = await generateRefreshToken(findUser?._id);
+//         const currentDateTime = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+//         const shiftToken = `${findUser?.firstname}-${findUser?.lastname}-${currentDateTime}`;
 
-        const updateuser = await User.findByIdAndUpdate(
-            findUser.id,
-            {
-              refreshToken: refreshToken,
-              shifttoken: shiftToken,
-            },
-            { new: true }
-          );
-          res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            maxAge: 72 * 60 * 60 * 1000,
-          });
+//         const updateuser = await User.findByIdAndUpdate(
+//             findUser.id,
+//             {
+//               refreshToken: refreshToken,
+//               shifttoken: shiftToken,
+//             },
+//             { new: true }
+//           );
+//           res.cookie("refreshToken", refreshToken, {
+//             httpOnly: true,
+//             maxAge: 72 * 60 * 60 * 1000,
+//           });
 
-        res.json({
-            _id:findUser?._id,
-            firstname:findUser?.firstname,
-            lastname:findUser?.lastname,
-            email:findUser?.email,
-            mobile:findUser?.mobile,
-            token:generateToken(findUser?._id),
-            shifttoken: shiftToken,
-            userrole:findUser?.userrole,
-            shiftacess:findUser?.shiftacess,
-
-
+//         res.json({
+//             _id:findUser?._id,
+//             firstname:findUser?.firstname,
+//             lastname:findUser?.lastname,
+//             email:findUser?.email,
+//             mobile:findUser?.mobile,
+//             token:generateToken(findUser?._id),
+//             shifttoken: shiftToken,
+//             userrole:findUser?.userrole,
+//             shiftacess:findUser?.shiftacess,
 
 
-        });
+
+
+//         });
+//     }
+//     else
+//     {
+//         throw new Error("Invalid Details");
+//     }
+
+// });
+
+
+const loginUserController = asyncHandler(async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
-    else
-    {
-        throw new Error("Invalid Details");
+
+    const findUser = await User.findOne({ email });
+
+    if (!findUser) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    const isPasswordValid = await findUser.isPasswordMatched(password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const refreshToken = await generateRefreshToken(findUser._id);
+    const currentDateTime = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    const shiftToken = `${findUser.firstname}-${findUser.lastname}-${currentDateTime}`;
+
+    await User.findByIdAndUpdate(
+      findUser.id,
+      {
+        refreshToken: refreshToken,
+        shifttoken: shiftToken,
+      },
+      { new: true }
+    );
+
+    // Cookie settings for production
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 72 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return res.status(200).json({
+      _id: findUser._id,
+      firstname: findUser.firstname,
+      lastname: findUser.lastname,
+      email: findUser.email,
+      mobile: findUser.mobile,
+      token: generateToken(findUser._id),
+      shifttoken: shiftToken,
+      userrole: findUser.userrole,
+      shiftacess: findUser.shiftacess,
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
-
 const vertifyUser =asyncHandler(async(req,res,next) =>{
   const { token } = req.body;
   try {
