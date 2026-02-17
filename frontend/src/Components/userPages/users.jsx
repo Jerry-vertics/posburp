@@ -141,11 +141,11 @@ const ViewUser =() =>{
       name: 'Action',
       cell: row => (
         <div>
-          <Link to={`/edituser/${row._id}`} className="btn btn-primary">Edit</Link>
+          <Link to={`/edituser/${row._id}`} className="btn btn-primary"></Link>
           {row.status === "Active" ? (
-            <button onClick={(e) => handleDeactivate(row._id)} className="btn btn-danger ml-2">Deactivate</button>
+            <button onClick={(e) => handleDeactivate(row._id)} className="btn btn-danger ml-2"></button>
           ) : (
-            <button onClick={(e) => handleActivate(row._id)} className="btn btn-success ml-2">Activate</button>
+            <button onClick={(e) => handleActivate(row._id)} className="btn btn-success ml-2"></button>
           )}
         </div>
       ),

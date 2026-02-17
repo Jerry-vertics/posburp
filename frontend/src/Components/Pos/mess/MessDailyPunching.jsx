@@ -18,8 +18,8 @@ export const MessDailyPunching = () => {
         plan: 'Monthly Premium',
         remainingMeals: 45,
         meals: {
-          breakfast: { done: false, time: '7:00 AM - 11:00 AM', disabled: false },
-          lunch: { done: false, time: '12:00 PM - 2:30 PM', disabled: false },
+          breakfast: { done: false, time: '7:00 AM - 12:00 PM', disabled: false },
+          lunch: { done: false, time: '12:00 PM - 5:00 PM', disabled: false },
           dinner: { done: false, time: '7:00 PM - 10:00 PM', disabled: false }
         }
       },
@@ -31,8 +31,8 @@ export const MessDailyPunching = () => {
         plan: 'Weekly Basic',
         remainingMeals: 12,
         meals: {
-          breakfast: { done: false, time: '7:00 AM - 11:00 AM', disabled: false },
-          lunch: { done: false, time: '12:00 PM - 2:30 PM', disabled: false },
+          breakfast: { done: false, time: '7:00 AM - 12:00 PM', disabled: false },
+          lunch: { done: false, time: '12:00 PM - 5:00 PM', disabled: false },
           dinner: { done: false, time: '7:00 PM - 10:00 PM', disabled: false }
         }
       },
@@ -44,8 +44,8 @@ export const MessDailyPunching = () => {
         plan: 'Daily Pass',
         remainingMeals: 3,
         meals: {
-          breakfast: { done: false, time: '7:00 AM - 11:00 AM', disabled: false },
-          lunch: { done: false, time: '12:00 PM - 2:30 PM', disabled: false },
+          breakfast: { done: false, time: '7:00 AM - 12:00 PM', disabled: false },
+          lunch: { done: false, time: '12:00 PM - 5:00 PM', disabled: false },
           dinner: { done: false, time: '7:00 PM - 10:00 PM', disabled: false }
         }
       },
@@ -57,50 +57,57 @@ export const MessDailyPunching = () => {
         plan: 'Monthly Basic',
         remainingMeals: 0,
         meals: {
-          breakfast: { done: false, time: '7:00 AM - 11:00 AM', disabled: true },
-          lunch: { done: false, time: '12:00 PM - 2:30 PM', disabled: true },
+          breakfast: { done: false, time: '7:00 AM - 12:00 PM', disabled: true },
+          lunch: { done: false, time: '12:00 PM - 5:00 PM', disabled: true },
           dinner: { done: false, time: '7:00 PM - 10:00 PM', disabled: true }
         }
       }
-    ])
-  }, [])
+    ]);
+  }, []);
 
-  // Check meal timings and update disabled status - FIXED: Added null check
+  // Check meal timings and update disabled status
   useEffect(() => {
-    if (!selectedCustomer) return; // Important: Exit if no customer selected
+    if (!selectedCustomer) return;
 
-    const currentTime = new Date()
-    const currentHour = currentTime.getHours()
-    const currentMinute = currentTime.getMinutes()
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
 
     setSelectedCustomer(prev => {
-      if (!prev) return prev; // Additional null check
+      if (!prev) return prev;
 
-      const updatedMeals = { ...prev.meals }
+      const updatedMeals = { ...prev.meals };
 
-      // Breakfast: 7:00 AM - 11:00 AM
+      // Breakfast: 7:00 AM - 12:00 PM (noon)
+      const breakfastStart = 7 * 60; // 7:00 AM
+      const breakfastEnd = 12 * 60; // 12:00 PM (noon)
       updatedMeals.breakfast.disabled = !(
-        (currentHour >= 7 && currentHour < 11) ||
-        (currentHour === 11 && currentMinute === 0)
-      ) || prev.remainingMeals <= 0 || prev.status === 'Inactive'
+        currentTimeInMinutes >= breakfastStart &&
+        currentTimeInMinutes < breakfastEnd
+      ) || prev.remainingMeals <= 0 || prev.status === 'Inactive';
 
-      // Lunch: 12:00 PM - 2:30 PM
+      // Lunch: 12:00 PM - 5:00 PM
+      const lunchStart = 12 * 60; // 12:00 PM
+      const lunchEnd = 17 * 60; // 5:00 PM
       updatedMeals.lunch.disabled = !(
-        (currentHour >= 12 && currentHour < 14) ||
-        (currentHour === 14 && currentMinute <= 30)
-      ) || prev.remainingMeals <= 0 || prev.status === 'Inactive'
+        currentTimeInMinutes >= lunchStart &&
+        currentTimeInMinutes < lunchEnd
+      ) || prev.remainingMeals <= 0 || prev.status === 'Inactive';
 
       // Dinner: 7:00 PM - 10:00 PM
+      const dinnerStart = 19 * 60; // 7:00 PM
+      const dinnerEnd = 22 * 60; // 10:00 PM
       updatedMeals.dinner.disabled = !(
-        (currentHour >= 19 && currentHour < 22) ||
-        (currentHour === 22 && currentMinute === 0)
-      ) || prev.remainingMeals <= 0 || prev.status === 'Inactive'
+        currentTimeInMinutes >= dinnerStart &&
+        currentTimeInMinutes < dinnerEnd
+      ) || prev.remainingMeals <= 0 || prev.status === 'Inactive';
 
-      return { ...prev, meals: updatedMeals }
-    })
-  }, [selectedCustomer]) // Dependency is correct
+      return { ...prev, meals: updatedMeals };
+    });
+  }, [selectedCustomer]);
 
-  // Filter customers based on search term - FIXED: Added debouncing
+  // Filter customers based on search term
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchTerm.length >= 2) {
@@ -115,7 +122,7 @@ export const MessDailyPunching = () => {
         setFilteredCustomers([])
         setShowDropdown(false)
       }
-    }, 300) // Debounce for better performance
+    }, 300)
 
     return () => clearTimeout(timer)
   }, [searchTerm, customers])
@@ -140,7 +147,6 @@ export const MessDailyPunching = () => {
   }
 
   const handleQRScan = () => {
-    // Simulate QR scan
     const activeCustomers = customers.filter(c => c.status === 'Active' && c.remainingMeals > 0)
     if (activeCustomers.length > 0) {
       const randomCustomer = activeCustomers[Math.floor(Math.random() * activeCustomers.length)]
@@ -339,8 +345,8 @@ export const MessDailyPunching = () => {
                       {selectedCustomer.meals.breakfast.done
                         ? '✓ Completed'
                         : selectedCustomer.meals.breakfast.disabled
-                          ? '7AM - 11AM'
-                          : '7AM - 11AM'}
+                          ? '7AM - 12PM'
+                          : '7AM - 12PM'}
                     </small>
                     {selectedCustomer.meals.breakfast.done && (
                       <small className="d-block text-white-50">
@@ -368,8 +374,8 @@ export const MessDailyPunching = () => {
                       {selectedCustomer.meals.lunch.done
                         ? '✓ Completed'
                         : selectedCustomer.meals.lunch.disabled
-                          ? '12PM - 2:30PM'
-                          : '12PM - 2:30PM'}
+                          ? '12PM - 5PM'
+                          : '12PM - 5PM'}
                     </small>
                     {selectedCustomer.meals.lunch.done && (
                       <small className="d-block text-white-50">

@@ -297,23 +297,7 @@ const handleTable = (tables) => {
   const handleTabsClick = (index) => {
     setActiveTab(index);
   };
-  // const trimmedValue = typeof numberofperson === 'string' ? numberofperson.trim() : '';
 
-  // const handleNumberofPersonChange = (e, tableId) => {
-  //   setNumberofPerson((prevNumberofperson) => ({
-  //     ...prevNumberofperson,
-  //     [tableId]: e.target.value,
-  //   }));
-  // };
-
-  // const handleNumberofPersonChange = (e) => {
-  //   const value = e.target.value;
-
-  //   // Validate if the entered value is a valid positive integer
-  //   if (/^[1-9]\d*$/.test(value) || value === "") {
-  //     setNumberofPerson(value);
-  //   }
-  // };
 
   const handleNumberofPersonChange = (e, tableId) => {
   const value = e.target.value;
@@ -1014,8 +998,8 @@ const tabStyle = {
 
 
 
-  <div className="col-12 col-sm-12 col-md-3 col-lg-1">
-   <div className="pos-menu">
+  <div className="col-12 col-sm-12 col-md-3 col-lg-1 " >
+   <div className="pos-menu poscards">
 
     <button className="pos-btn active" onClick={handleClearClick}>
       <FaHistory className="pos-icon" />
@@ -1073,15 +1057,12 @@ const tabStyle = {
       <span>Daily Settlement</span>
     </button>
 
-    <button className="pos-btn">
-      <FiSettings className="pos-icon" />
-      Settings
-    </button>
+
 
   </div>
   </div>
 
-  <div className="col-12 col-sm-12 col-md-4 col-lg-4">
+  <div className="col-12 col-sm-12 col-md-4 col-lg-4 poscards">
 
           <div
             className="table-responsive vh-40"
@@ -1267,8 +1248,9 @@ const tabStyle = {
 
   </div>
 
- <div className="col-12 col-sm-12 col-md-5 col-lg-7">
-        <div className="tbl-h">
+ <div className="col-12 col-sm-12 col-md-5 col-lg-7 ">
+      <div className="poscards">
+          <div className="tbl-h ">
           <ul className="nav nav-tabs nav-justified" role="tablist">
             <li className="nav-item ">
               {/* <a className="nav-link  active" onClick={handleWaiter} data-toggle="tab" href="#waiter" role="tab" aria-controls="kiwi2" aria-selected="false">Waiter</a> */}
@@ -1301,26 +1283,36 @@ const tabStyle = {
               </a>
             </li>
 
-            {tabEnabled.dineIn && (
-              <li className="nav-item">
-                <a
-                  className="nav-link pos posdinein "
-                 onClick={() => {
+{tabEnabled.dineIn && (
+  <li className="nav-item">
+    <a
+      className="nav-link pos posdinein"
+      style={{
+        background: options === "Dine In"
+          ? 'linear-gradient(320deg, #28a745 0%, #28a745 100%)'
+          : '',
+        border: 0,
+        borderRadius: '10px',
+        marginTop: '0px',
+        color: '#fff !important',
+        fontWeight: 700,
+        padding: '13px'
+      }}
+      onClick={() => {
         handleDinein();
         setactiveTableTab(1);
       }}
-                  data-toggle="tab"
-                  href="#table"
-                  role="tab"
-                  aria-controls="duck2"
-                  aria-selected="true"
-                >
-                  <FaCcDinersClub className="mr-2" />
-                  Dine In
-                </a>
-              </li>
-            )}
-
+      data-toggle="tab"
+      href="#table"
+      role="tab"
+      aria-controls="duck2"
+      aria-selected="true"
+    >
+      <FaCcDinersClub className="mr-2" />
+      Dine In
+    </a>
+  </li>
+)}
             {tabEnabled.delivery && (
               <li className="nav-item">
                 <a
@@ -1373,7 +1365,18 @@ const tabStyle = {
        {tabEnabled.takeaway && (
   <li className="nav-item">
     <a
-      className="nav-link pos"
+       className="nav-link pos posdinein"
+      style={{
+        background: options === "Take Away"
+          ? 'linear-gradient(320deg, #28a745 0%, #28a745 100%)'
+          : '',
+        border: 0,
+        borderRadius: '10px',
+        marginTop: '0px',
+        color: '#fff !important',
+        fontWeight: 500,
+        padding: '13px'
+      }}
       onClick={handleTakeway}
       data-toggle="tab"
       href="#foodmenu"
@@ -1799,6 +1802,8 @@ const tabStyle = {
   </div>
 )}
         </div>
+      </div>
+
       </div>
 
        <PosNeworderKotModal

@@ -118,7 +118,7 @@ const Pos =() =>{
         </div>
       </div>
       <div className="row">
-        <div className="tab-content mt-3">
+        <div className="tab-content">
         <div className={`tab-pane ${activeTab === 'neworder' ? 'active' : ''}`} id="neworder" role="tabpanel" aria-labelledby="neworder-tab">
             <PosNewOrder  />
           </div>

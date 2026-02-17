@@ -206,7 +206,7 @@ filteredOrders.map((order) => (
             />
           </div>
 
-          <h5 className="text-center"><span>{order.ordernumber}</span></h5>
+          <h6 className="text-center"><span>{order.ordernumber}</span></h6>
           <h6 className="text-center">Table: {order.table ? order.table.tablename : 'No Table'}</h6>
           <h6 className="text-center">WaiterName: {order.waiter.firstname}{order.waiter.lastname}</h6>
           <h6 className="text-start">Running order</h6> {/* Changed from text-center to text-start */}

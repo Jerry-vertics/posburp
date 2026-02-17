@@ -76,14 +76,14 @@
 }
 .main-content li.nav-item
 {
-    padding: 10px;
+    padding: 1px 1px 10px 0px;
 }
 .main-content .nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active {
     border: 0;
     background: #c82333 ;
     background: linear-gradient(320deg, #c82333 0%, #c82333 100%);
     border-radius: 10px;
-    margin-top: -5px;
+    /* margin-top: -5px; */
     /* height: 115%; */
     color: #fff !important;
     font-weight: 700;
@@ -547,6 +547,7 @@ ul.nav.nav-tabs {
     justify-content: flex-start;
     align-items: flex-start;
     overflow: hidden;
+    gap: 6px;
 }
 .nav-tabs li {
     flex-basis: 90px;
@@ -770,7 +771,7 @@ td {
 }
 
 .vh-40{
-    height: 46vh;
+    height: 43vh;
     overflow-y: hidden;
 }
 
@@ -1337,9 +1338,14 @@ text-transform: lowercase;
   }
 }
 
-.swal2-confirm .swal2-styled
-{
-  background-color: #1b5334 !important;
+div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
+  border: 0;
+  border-radius: .25em;
+  background: initial;
+    background-color: initial;
+  background-color: #2e8b57 !important;
+  color: #fff;
+  font-size: 1em;
 }
 
 .swal2-cancel
@@ -1350,4 +1356,43 @@ text-transform: lowercase;
 .modal-header .bg-primary
 {
   background-color:#c82333  !important ;
+}
+
+/* Active Dine-In tab - Green color */
+.nav-link.pos.active-dinein,
+.nav-link.pos.active-dinein:hover,
+.nav-link.pos.active-dinein:focus {
+  background-color: #28a745 !important;  /* Green color */
+  color: white !important;
+  border-color: #28a745 !important;
+}
+
+/* Optional: If you want to ensure the icon also turns white */
+.nav-link.pos.active-dinein svg {
+  color: white !important;
+}
+
+  .cards {
+              background-color: #fff;
+    box-shadow: 0px 0px 10px rgb(0 0 0 / .08%);
+    border: 1px solid #e6e6e6;
+    padding: 15px;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(2px);
+            position: relative;
+            will-change: transform;
+        }
+
+.poscards
+{
+      width: 100%;
+
+    background-color: #fff;
+    box-shadow: 0px 0px 15px rgb(0 0 0 / 15%);
+    border-radius: 6px;
+    padding: 10px 10px 10px 10px;
+    height: 90vh;
 }
