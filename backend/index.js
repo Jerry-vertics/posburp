@@ -39,8 +39,8 @@ app.listen(PORT, () => {
 });
 
 
-  app.use(cors({ origin: 'https://posburp-su9l.vercel.app' }));
-const allowedOrigins = ['https://posburp-su9l.vercel.app'];
+  app.use(cors({ origin: 'https://posburp-8xrf.vercel.app' }));
+const allowedOrigins = ['https://posburp-8xrf.vercel.app'];
 
 app.use(cors({
   origin: function (origin, callback) {
