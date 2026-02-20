@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import apiConfig from '../layouts/base_url';
 
-const PosTodayOrder = () => {
+const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) => {
   const [posTodayorder, setPosTodayorder] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState(null);
@@ -15,6 +15,7 @@ const PosTodayOrder = () => {
   const [canceldata, setCancelData] = useState(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [paymentError, setPaymentError] = useState('');
 
@@ -29,6 +30,13 @@ const PosTodayOrder = () => {
 
   const componentRef = useRef();
   const navigate = useNavigate();
+
+  // Add refs for modal containers to handle click outside
+  const modalRef = useRef();
+  const completeModalRef = useRef();
+  const kotModalRef = useRef();
+  const cancelModalRef = useRef();
+  const printModalRef = useRef();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,10 +69,45 @@ const PosTodayOrder = () => {
     setShiftstoken(storetoken);
   }, []);
 
+  useEffect(() => {
+    if (isModalTodayOrderReport) {
+      fetchTodayOrders();
+    }
+  }, [isModalTodayOrderReport]);
+
+  // Add event listener to handle click outside modals
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showModal && completeModalRef.current && !completeModalRef.current.contains(event.target)) {
+        // Optional: Close modal when clicking outside
+        // setShowModal(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showModal]);
+
+  const fetchTodayOrders = () => {
+    setLoading(true);
+    fetch(`${apiConfig.baseURL}/api/pos/gettodayOrder`)
+      .then((response) => response.json())
+      .then((data) => {
+        setPosTodayorder(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setLoading(false);
+      });
+  };
+
   const totalGrandTotal = Array.isArray(posTodayorder)
     ? posTodayorder.reduce((total, order) => {
-        const orderGrandTotal = parseFloat(order.grandTotal);
-        return !isNaN(orderGrandTotal) ? total + orderGrandTotal : total;
+        const orderGrandTotal = parseFloat(order.grandTotal) || 0;
+        return total + orderGrandTotal;
       }, 0)
     : 0;
 
@@ -207,13 +250,6 @@ const PosTodayOrder = () => {
     `;
   };
 
-  useEffect(() => {
-    fetch(`${apiConfig.baseURL}/api/pos/gettodayOrder`)
-      .then((response) => response.json())
-      .then((data) => setPosTodayorder(data))
-      .catch((error) => console.error(error));
-  }, []);
-
   const handleComplete = (id) => {
     console.log(id);
     axios.get(`${apiConfig.baseURL}/api/pos/getcomplete/${id}`)
@@ -288,327 +324,594 @@ const PosTodayOrder = () => {
           timer: 3000,
           timerProgressBar: true,
         }).then(() => {
-          navigate('/pos');
+          setCancelModel(false);
+          fetchTodayOrders(); // Refresh data
         });
       })
       .catch((err) => console.log(err));
   };
 
-  return (
-    <div className="container">
-      <div className="row">
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th>SI No</th>
-              <th>Bill Number</th>
-              <th>Order Number</th>
-              <th>Select Option</th>
-              <th>Waiter</th>
-              <th>Total</th>
-              <th>Vat Amount</th>
-              <th>Date & Time</th>
-              <th>Added By</th>
-              <th>Grand Total</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.isArray(posTodayorder) && posTodayorder.length > 0 ? (
-              posTodayorder.map((order, key) => {
-                const subtotal = order.total;
-                const vat = 5;
-                const vatamounts = (subtotal * vat) / 100;
-                const subtotalAfterVat = subtotal - vatamounts;
-                const orderDate = new Date(order.updatedAt);
-                const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
-                const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
-                const datetime = `${formattedDate} ${formattedTime}`;
+  const handleClose = () => {
+    setModalTodayOrderReport(false);
+  };
 
-                return (
-                  <tr key={order._id}>
-                    <td>{key + 1}</td>
-                    <td>{order.billnumber}</td>
-                    <td>{order.ordernumber}</td>
-                    <td>{order.options}</td>
-                    <td>{order.waiter ? `${order.waiter.firstname} ${order.waiter.lastname}` : 'N/A'}</td>
-                    <td>{subtotalAfterVat}</td>
-                    <td>{vatamounts}</td>
-                    <td>{datetime}</td>
-                    <td>{order.user ? `${order.user.firstname} ${order.user.lastname || ''}` : 'N/A'}</td>
-                    <td>{order.grandTotal}</td>
-                    <td>
-                      <button
-                        onClick={(e) => handleComplete(order._id)}
-                        className="btn btn-primary btn-sm"
-                        style={{ marginRight: '5px' }}
-                        data-toggle="tooltip"
-                        data-placement="right"
-                        title="Print Invoice"
-                      >
-                        <i className="mdi mdi-cloud-print-outline"></i>
-                      </button>
-                      <button
-                        onClick={(e) => handlekot(order._id)}
-                        className="btn btn-danger btn-sm"
-                        style={{ marginRight: '5px' }}
-                        data-toggle="tooltip"
-                        data-placement="right"
-                        title="Kitchen Order"
-                      >
-                        <i className="mdi mdi-food-variant"></i>
-                      </button>
-                      <button
-                        onClick={(e) => handleCancel(order._id)}
-                        className="btn btn-warning btn-sm"
-                        style={{ marginRight: '5px' }}
-                        data-toggle="tooltip"
-                        data-placement="right"
-                        title="Cancel Order"
-                      >
-                        <i className="mdi mdi-cancel"></i>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="11">No data available</td>
-              </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan="9"></td>
-              <td>Total Grand Total:</td>
-              <td>{totalGrandTotal}</td>
-            </tr>
-          </tfoot>
-        </table>
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const formattedDate = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+    const formattedTime = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    return `${formattedDate} ${formattedTime}`;
+  };
+
+  // Stop propagation function for buttons
+  const handleButtonClick = (e, callback) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (callback) {
+      callback();
+    }
+  };
+
+  // If modal is not open, don't render anything
+  if (!isModalTodayOrderReport) return null;
+
+  return (
+    <div>
+      {/* Main Modal */}
+      <div
+        className={`modal fade ${isModalTodayOrderReport ? 'show d-block' : ''}`}
+        tabIndex="-1"
+        role="dialog"
+        style={{
+          display: isModalTodayOrderReport ? 'block' : 'none',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          zIndex: 1050
+        }}
+        onClick={(e) => {
+          // Close only if clicking the backdrop
+          if (e.target === e.currentTarget) {
+            handleClose();
+          }
+        }}
+      >
+        <div
+          className="modal-dialog modal-lg"
+          role="document"
+          style={{ maxWidth: '1400px', zIndex: 1051 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">
+                <i className="mdi mdi-calendar-today mr-2"></i>
+                Today's Orders Report
+              </h5>
+              <button
+                type="button"
+                className="close"
+                onClick={handleClose}
+              >
+                <span>&times;</span>
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="container-fluid">
+                <div className="row">
+                  <div className="col-12">
+                    {loading ? (
+                      <div className="text-center p-4">
+                        <div className="spinner-border text-primary" role="status">
+                          <span className="sr-only">Loading...</span>
+                        </div>
+                        <p className="mt-2">Loading today's orders...</p>
+                      </div>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-bordered table-hover">
+                          <thead className="thead-light">
+                            <tr>
+                              <th>SI No</th>
+                              <th>Bill Number</th>
+                              <th>Order Number</th>
+                              <th>Order Type</th>
+                              <th>Waiter</th>
+                              <th>Subtotal</th>
+                              <th>VAT Amount</th>
+                              <th>Date & Time</th>
+                              <th>Added By</th>
+                              <th>Grand Total</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Array.isArray(posTodayorder) && posTodayorder.length > 0 ? (
+                              posTodayorder.map((order, key) => {
+                                const subtotal = parseFloat(order.total) || 0;
+                                const vat = 5;
+                                const vatamounts = (subtotal * vat) / 100;
+                                const subtotalAfterVat = subtotal - vatamounts;
+
+                                return (
+                                  <tr key={order._id || key}>
+                                    <td>{key + 1}</td>
+                                    <td>{order.billnumber || 'N/A'}</td>
+                                    <td>{order.ordernumber || 'N/A'}</td>
+                                    <td>
+                                      <span className="badge badge-info">
+                                        {order.options || 'N/A'}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      {order.waiter
+                                        ? `${order.waiter.firstname || ''} ${order.waiter.lastname || ''}`.trim() || 'N/A'
+                                        : 'N/A'
+                                      }
+                                    </td>
+                                    <td>{subtotalAfterVat.toFixed(2)}</td>
+                                    <td>{vatamounts.toFixed(2)}</td>
+                                    <td>{formatDate(order.updatedAt)}</td>
+                                    <td>
+                                      {order.user
+                                        ? `${order.user.firstname || ''} ${order.user.lastname || ''}`.trim() || 'N/A'
+                                        : 'N/A'
+                                      }
+                                    </td>
+                                    <td>
+                                      <strong>
+                                        {order.grandTotal ? parseFloat(order.grandTotal).toFixed(2) : '0.00'}
+                                      </strong>
+                                    </td>
+                                    <td>
+                                      <button
+                                        onClick={(e) => handleButtonClick(e, () => handleComplete(order._id))}
+                                        className="btn btn-sm btn-primary mr-1"
+                                        data-toggle="tooltip"
+                                        title="Print Invoice"
+                                        type="button"
+                                      >
+                                        <i className="mdi mdi-cloud-print-outline"></i>
+                                      </button>
+                                      <button
+                                        onClick={(e) => handleButtonClick(e, () => handlekot(order._id))}
+                                        className="btn btn-sm btn-danger mr-1"
+                                        data-toggle="tooltip"
+                                        title="Kitchen Order Ticket"
+                                        type="button"
+                                      >
+                                        <i className="mdi mdi-food-variant"></i>
+                                      </button>
+                                      <button
+                                        onClick={(e) => handleButtonClick(e, () => handleCancel(order._id))}
+                                        className="btn btn-sm btn-warning"
+                                        data-toggle="tooltip"
+                                        title="Cancel Order"
+                                        type="button"
+                                      >
+                                        <i className="mdi mdi-cancel"></i>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            ) : (
+                              <tr>
+                                <td colSpan="11" className="text-center p-4">
+                                  <i className="mdi mdi-information-outline mdi-24px"></i>
+                                  <p className="mt-2">No orders found for today</p>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                          <tfoot className="table-info">
+                            <tr>
+                              <td colSpan="9" className="text-right">
+                                <strong>Total Grand Total:</strong>
+                              </td>
+                              <td colSpan="2">
+                                <strong>{totalGrandTotal.toFixed(2)}</strong>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={handleClose}
+              >
+                <i className="mdi mdi-close mr-1"></i>
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={() => window.print()}
+              >
+                <i className="mdi mdi-printer mr-1"></i>
+                Print Report
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Complete Order Modal */}
-      <div className={`modal ${showModal ? 'show' : ''}`} tabIndex="-1" role="dialog" style={{ display: showModal ? 'block' : 'none' }}>
-        <div className="modal-dialog modal-lg" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Order Details</h5>
-              <button type="button" className="close" onClick={() => setShowModal(false)}>
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              {data ? (
-                data.map((order) => {
-                  const subtotal = order.cart.reduce((total, cartItem) => total + (cartItem.quantity * cartItem.salesprice), 0);
-                  const vatPercentValue = 5;
-                  const vatAmount = (subtotal * vatPercentValue) / 100;
-                  const subTotals = subtotal - vatAmount;
-                  const grandTotal = subTotals + vatAmount;
-                  const orderDate = new Date(order.date);
-                  const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
-                  const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
+      {showModal && (
+        <>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1060
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowModal(false);
+              }
+            }}
+          >
+            <div
+              className="modal-dialog modal-lg"
+              role="document"
+              style={{ maxWidth: '1000px', zIndex: 1061 }}
+              ref={completeModalRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Order Details</h5>
+                  <button type="button" className="close" onClick={() => setShowModal(false)}>
+                    <span>&times;</span>
+                  </button>
+                </div>
+                <div className="modal-body">
+                  {data ? (
+                    data.map((order) => {
+                      const subtotal = order.cart.reduce((total, cartItem) => total + (cartItem.quantity * cartItem.salesprice), 0);
+                      const vatPercentValue = 5;
+                      const vatAmount = (subtotal * vatPercentValue) / 100;
+                      const subTotals = subtotal - vatAmount;
+                      const grandTotal = subTotals + vatAmount;
 
-                  return (
-                    <div key={order.id}>
-                      <h5>Order Number: {order.ordernumber}</h5>
-                      <h6>Options: {order.options}</h6>
-                      <h6>Customer Name: {order.customerDetails ? order.customerDetails.customername : 'N/A'}</h6>
-                      <h6>Table: {order.tableDetails ? order.tableDetails.tablename : 'N/A'}</h6>
-                      <h6>Waiter: {order.waiterDetails ? order.waiterDetails.firstname : 'N/A'} {order.waiterDetails ? order.waiterDetails.lastname : 'N/A'}</h6>
-                      <h6>Date & Time: {formattedDate} {formattedTime}</h6>
+                      return (
+                        <div key={order.id}>
+                          <div className="row mb-3">
+                            <div className="col-md-6">
+                              <p><strong>Order Number:</strong> {order.ordernumber}</p>
+                              <p><strong>Options:</strong> {order.options}</p>
+                              <p><strong>Customer:</strong> {order.customerDetails ? order.customerDetails.customername : 'N/A'}</p>
+                            </div>
+                            <div className="col-md-6">
+                              <p><strong>Table:</strong> {order.tableDetails ? order.tableDetails.tablename : 'N/A'}</p>
+                              <p><strong>Waiter:</strong> {order.waiterDetails ? `${order.waiterDetails.firstname} ${order.waiterDetails.lastname}` : 'N/A'}</p>
+                              <p><strong>Date & Time:</strong> {formatDate(order.date)}</p>
+                            </div>
+                          </div>
 
-                      <table className="table table-bordered">
-                        <thead>
-                          <tr>
-                            <th>Si No</th>
-                            <th>Food Name</th>
-                            <th>Quantity</th>
-                            <th>Unit Price</th>
-                            <th>Price</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {order.cart.map((cartItem, key) => (
-                            <tr key={cartItem.foodmenuId}>
-                              <td>{key + 1}</td>
-                              <td>{cartItem.menuItemDetails.foodmenuname}</td>
-                              <td>{cartItem.quantity}</td>
-                              <td>{cartItem.salesprice}</td>
-                              <td>{cartItem.quantity * cartItem.salesprice}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          <table className="table table-bordered">
+                            <thead className="thead-light">
+                              <tr>
+                                <th>Si No</th>
+                                <th>Food Name</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Price</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {order.cart.map((cartItem, key) => (
+                                <tr key={cartItem.foodmenuId || key}>
+                                  <td>{key + 1}</td>
+                                  <td>{cartItem.menuItemDetails?.foodmenuname || 'N/A'}</td>
+                                  <td>{cartItem.quantity}</td>
+                                  <td>{parseFloat(cartItem.salesprice).toFixed(2)}</td>
+                                  <td>{(cartItem.quantity * cartItem.salesprice).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
 
-                      <h6 className="text-right">Subtotal: {subTotals}</h6>
-                      <h6 className="text-right">VAT Amount ({vatPercentValue}%): {vatAmount}</h6>
-                      <h6 className="text-right">Grand Total: {grandTotal}</h6>
-
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => {
-                            setOrderData(order);
-                            setShowPrintModal(true);
-                            setShowModal(false);
-                          }}
-                        >
-                          <i className="mdi mdi-printer mr-1"></i> Print
-                        </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p>No data</p>
-              )}
+                          <div className="row">
+                            <div className="col-md-6 offset-md-6">
+                              <table className="table table-sm">
+                                <tbody>
+                                  <tr>
+                                    <td><strong>Subtotal:</strong></td>
+                                    <td className="text-right">{subTotals.toFixed(2)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td><strong>VAT Amount ({vatPercentValue}%):</strong></td>
+                                    <td className="text-right">{vatAmount.toFixed(2)}</td>
+                                  </tr>
+                                  <tr className="table-info">
+                                    <td><strong>Grand Total:</strong></td>
+                                    <td className="text-right"><strong>{grandTotal.toFixed(2)}</strong></td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-center p-4">No data available</p>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (data && data[0]) {
+                        setOrderData(data[0]);
+                        setShowPrintModal(true);
+                        setShowModal(false);
+                      }
+                    }}
+                  >
+                    <i className="mdi mdi-printer mr-1"></i> Print
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowModal(false);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* KOT Modal */}
-      <div className={`modal ${showkotModal ? 'show' : ''}`} tabIndex="-1" role="dialog" style={{ display: showkotModal ? 'block' : 'none' }}>
-        <div className="modal-dialog modal-lg" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">KOT (Kitchen Order Ticket)</h5>
-              <button type="button" className="close" onClick={() => setShowKotModal(false)}>
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              {kotdata ? (
-                kotdata.map((order) => {
-                  const subtotal = order.cart.reduce((total, cartItem) => total + (cartItem.quantity * cartItem.salesprice), 0);
-                  const vatPercentValue = 5;
-                  const vatAmount = (subtotal * vatPercentValue) / 100;
-                  const subTotals = subtotal - vatAmount;
-                  const grandTotal = subTotals + vatAmount;
-                  const orderDate = new Date(order.date);
-                  const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}-${(orderDate.getMonth() + 1).toString().padStart(2, '0')}-${orderDate.getFullYear()}`;
-                  const formattedTime = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}:${orderDate.getSeconds().toString().padStart(2, '0')}`;
+      {showkotModal && (
+        <>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1060
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowKotModal(false);
+              }
+            }}
+          >
+            <div
+              className="modal-dialog modal-lg"
+              role="document"
+              style={{ maxWidth: '1000px', zIndex: 1061 }}
+              ref={kotModalRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">KOT (Kitchen Order Ticket)</h5>
+                  <button type="button" className="close" onClick={() => setShowKotModal(false)}>
+                    <span>&times;</span>
+                  </button>
+                </div>
+                <div className="modal-body">
+                  {kotdata ? (
+                    kotdata.map((order) => {
+                      return (
+                        <div key={order.id}>
+                          <div className="row mb-3">
+                            <div className="col-md-6">
+                              <p><strong>Order Number:</strong> {order.ordernumber}</p>
+                              <p><strong>Options:</strong> {order.options}</p>
+                              <p><strong>Customer:</strong> {order.customerDetails ? order.customerDetails.customername : 'N/A'}</p>
+                            </div>
+                            <div className="col-md-6">
+                              <p><strong>Table:</strong> {order.tableDetails ? order.tableDetails.tablename : 'N/A'}</p>
+                              <p><strong>Waiter:</strong> {order.waiterDetails ? `${order.waiterDetails.firstname} ${order.waiterDetails.lastname}` : 'N/A'}</p>
+                              <p><strong>Date & Time:</strong> {formatDate(order.date)}</p>
+                            </div>
+                          </div>
 
-                  return (
-                    <div key={order.id}>
-                      <h5>Order Number: {order.ordernumber}</h5>
-                      <h6>Options: {order.options}</h6>
-                      <h6>Customer Name: {order.customerDetails ? order.customerDetails.customername : 'N/A'}</h6>
-                      <h6>Table: {order.tableDetails ? order.tableDetails.tablename : 'N/A'}</h6>
-                      <h6>Waiter: {order.waiterDetails ? order.waiterDetails.firstname : 'N/A'} {order.waiterDetails ? order.waiterDetails.lastname : 'N/A'}</h6>
-                      <h6>Date & Time: {formattedDate} {formattedTime}</h6>
-
-                      <table className="table table-bordered">
-                        <thead>
-                          <tr>
-                            <th>Si No</th>
-                            <th>Food Name</th>
-                            <th>Quantity</th>
-                            <th>Special Instructions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {order.cart.map((cartItem, key) => (
-                            <tr key={cartItem.foodmenuId}>
-                              <td>{key + 1}</td>
-                              <td>{cartItem.menuItemDetails.foodmenuname}</td>
-                              <td>{cartItem.quantity}</td>
-                              <td>{cartItem.specialInstructions || 'None'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => {
-                            setOrderData(order);
-                            setShowPrintModal(true);
-                            setShowKotModal(false);
-                          }}
-                        >
-                          <i className="mdi mdi-printer mr-1"></i> Print KOT
-                        </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => setShowKotModal(false)}>
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p>No data</p>
-              )}
+                          <table className="table table-bordered">
+                            <thead className="thead-light">
+                              <tr>
+                                <th>Si No</th>
+                                <th>Food Name</th>
+                                <th>Quantity</th>
+                                <th>Special Instructions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {order.cart.map((cartItem, key) => (
+                                <tr key={cartItem.foodmenuId || key}>
+                                  <td>{key + 1}</td>
+                                  <td>{cartItem.menuItemDetails?.foodmenuname || 'N/A'}</td>
+                                  <td>{cartItem.quantity}</td>
+                                  <td>{cartItem.specialInstructions || 'None'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-center p-4">No data available</p>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (kotdata && kotdata[0]) {
+                        setOrderData(kotdata[0]);
+                        setShowPrintModal(true);
+                        setShowKotModal(false);
+                      }
+                    }}
+                  >
+                    <i className="mdi mdi-printer mr-1"></i> Print KOT
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowKotModal(false);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Cancel Order Modal */}
-      <div className={`modal ${isCancelmodel ? 'show' : ''}`} tabIndex="-1" role="dialog" style={{ display: isCancelmodel ? 'block' : 'none' }}>
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Cancel Order</h5>
-              <button type="button" className="close" onClick={() => setCancelModel(false)}>
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              {canceldata ? (
-                canceldata.map((order, key) => (
-                  <div key={order.id}>
-                    <h5>Bill Number: {order.billnumber}</h5>
-                    <h5>Order Number: {order.ordernumber}</h5>
-                    <h6>Options: {order.options}</h6>
-                    <h6 className="text-right">Total: {order.total}</h6>
-                    <h6 className="text-right">Grand Total: {order.grandTotal}</h6>
+      {isCancelmodel && (
+        <>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1060
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setCancelModel(false);
+              }
+            }}
+          >
+            <div
+              className="modal-dialog"
+              role="document"
+              style={{ maxWidth: '500px', zIndex: 1061 }}
+              ref={cancelModalRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Cancel Order</h5>
+                  <button type="button" className="close" onClick={() => setCancelModel(false)}>
+                    <span>&times;</span>
+                  </button>
+                </div>
+                <div className="modal-body">
+                  {canceldata ? (
+                    canceldata.map((order) => (
+                      <div key={order.id}>
+                        <div className="mb-3">
+                          <p><strong>Bill Number:</strong> {order.billnumber}</p>
+                          <p><strong>Order Number:</strong> {order.ordernumber}</p>
+                          <p><strong>Options:</strong> {order.options}</p>
+                          <p><strong>Total:</strong> {parseFloat(order.total || 0).toFixed(2)}</p>
+                          <p><strong>Grand Total:</strong> {parseFloat(order.grandTotal || 0).toFixed(2)}</p>
+                        </div>
 
-                    <div className="form-group row">
-                      <label className="col-sm-3 col-form-label">User Name</label>
-                      <div className="col-sm-9">
-                        <input type="text" className="form-control" name="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter Email" />
+                        <div className="form-group">
+                          <label>User Name/Email</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter Email"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Password</label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter Password"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="form-group row">
-                      <label className="col-sm-3 col-form-label">Password</label>
-                      <div className="col-sm-9">
-                        <input type="password" className="form-control" name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter Password" />
-                      </div>
-                    </div>
-
-                    <div className="modal-footer">
-                      <button type="button" onClick={() => handleCancelSubmit(order._id, order)} className="btn btn-danger">
-                        Submit Cancel Payment
-                      </button>
-                      <button type="button" className="btn btn-secondary" onClick={() => setCancelModel(false)}>
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p>No data</p>
-              )}
+                    ))
+                  ) : (
+                    <p className="text-center p-4">No data available</p>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelSubmit(canceldata?.[0]?._id, canceldata?.[0]);
+                    }}
+                    className="btn btn-danger"
+                  >
+                    Submit Cancel Payment
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCancelModel(false);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Print Modal */}
       {showPrintModal && (
         <>
-          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
-            <div className="modal-dialog modal-lg" role="document">
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1070
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowPrintModal(false);
+              }
+            }}
+          >
+            <div
+              className="modal-dialog modal-lg"
+              role="document"
+              style={{ maxWidth: '800px', zIndex: 1071 }}
+              ref={printModalRef}
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-content">
                 <div className="modal-header bg-primary text-white">
                   <h5 className="modal-title">
@@ -646,11 +949,11 @@ const PosTodayOrder = () => {
                       )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                         <span>Date:</span>
-                        <span>{new Date(orderData?.date || Date.now()).toLocaleDateString()}</span>
+                        <span>{orderData?.date ? new Date(orderData.date).toLocaleDateString() : 'N/A'}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                         <span>Time:</span>
-                        <span>{new Date(orderData?.date || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{orderData?.date ? new Date(orderData.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                         <span>Type:</span>
@@ -712,10 +1015,6 @@ const PosTodayOrder = () => {
                               <span>VAT Amount ({vatPercentValue}%):</span>
                               <span>{vatAmounts.toFixed(2)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
-                              <span>(VAT @ {vatPercentValue}%):</span>
-                              <span>{(subtotal * vatPercentValue / 100).toFixed(2)}</span>
-                            </div>
                             <div style={{
                               display: 'flex',
                               justifyContent: 'space-between',
@@ -750,14 +1049,20 @@ const PosTodayOrder = () => {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => setShowPrintModal(false)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPrintModal(false);
+                    }}
                   >
                     <i className="fas fa-times mr-1"></i> Close
                   </button>
                   <button
                     type="button"
                     className="btn btn-primary"
-                    onClick={handlePrints}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePrints();
+                    }}
                   >
                     <i className="fas fa-print mr-1"></i> Print Receipt
                   </button>
@@ -765,7 +1070,6 @@ const PosTodayOrder = () => {
               </div>
             </div>
           </div>
-          <div className="modal-backdrop fade show"></div>
         </>
       )}
     </div>

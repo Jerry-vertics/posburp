@@ -12,7 +12,7 @@ const PosNewKotmodal =({kotdata,showkotModal,setShowKotModal}) =>
     const handleCloseHold =() =>{
       setShowKotModal(false);
     }
-    
+
     const handlePrint = () => {
       if (kotModalRef.current) {
         // Use ReactToPrint to handle the print action for the KOT modal
@@ -31,8 +31,8 @@ const PosNewKotmodal =({kotdata,showkotModal,setShowKotModal}) =>
               </button>
             </div>
             <div className="modal-body">
-          
-              
+
+
               { kotdata ? (
 kotdata.map((order) => {
 
@@ -64,7 +64,7 @@ kotdata.map((order) => {
                     </tr>
                 </thead>
                 <tbody>
-                 
+
                   {order.cart.map((cartItem,key) => (
                 <tr key={cartItem.foodmenuId}>
                   <td>{key + 1}</td>
@@ -72,21 +72,21 @@ kotdata.map((order) => {
                   <td>{cartItem.quantity}</td>
                   <td>{cartItem.salesprice}</td>
                   <td>{cartItem.quantity * cartItem.salesprice}</td>
-                
+
                   {/* Render other cart item details here */}
                 </tr>
               ))}
-                
+
                 </tbody>
                 </table>
                 <h6 className="text-right">Subtotal: {subTotals}</h6>
             <h6 className="text-right">VAT Amount ({vatPercentValue}%): {vatAmount}</h6>
             <h6 className="text-right">Grand Total: {grandTotal}</h6>
 
-           
 
-          
-   
+
+
+
              </div>
             )
                   })
@@ -96,7 +96,7 @@ kotdata.map((order) => {
             }
             </div>
 
-            <div class="modal-footer">
+            <div className="modal-footer">
             <ReactToPrint
   trigger={() => (
     <button className="btn btn-outline-primary">Print</button>
@@ -105,7 +105,7 @@ kotdata.map((order) => {
 />
               <button type="button" className="btn btn-outline-secondary" onClick={() => setShowKotModal(false)}>Close</button>
       </div>
-         
+
           </div>
         </div>
       </div>

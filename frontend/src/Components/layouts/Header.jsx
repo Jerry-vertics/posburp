@@ -10,7 +10,7 @@ const Header =() =>{
   const logOut = () => {
     window.localStorage.clear();
     navigate('/')
-   
+
   };
 
   const [firstname, setFirstname] = useState('');
@@ -39,7 +39,7 @@ setUserId(storeid)
 
   const handlePassword =() =>{
 
-    
+
     setPasswordModel(true);
 
   }
@@ -51,7 +51,7 @@ setUserId(storeid)
 
     try {
         const response = await axios.post(`${apiConfig.baseURL}/api/user/changepassword`, {
-            userId: id, 
+            userId: id,
             currentPassword,
             newPassword,
         });
@@ -107,7 +107,7 @@ setUserId(storeid)
               <a className="nav-link dropdown-toggle" id="profileDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                 <div className="nav-profile-img">
                 <img src={`/assets/images/faces/${faceimage}`}  alt="inage" />
-                  
+
                   <span className="availability-status online"></span>
                 </div>
                 <div className="nav-profile-text">
@@ -122,9 +122,9 @@ setUserId(storeid)
                   <i className="mdi mdi-logout me-2 text-primary"></i> Signout </a>
               </div>
             </li>
-            
-   
-     
+
+
+
             <li className="nav-item nav-logout d-none d-lg-block">
               <a className="nav-link"  onClick={logOut}>
                 <i className="mdi mdi-power"></i>
@@ -133,10 +133,10 @@ setUserId(storeid)
 
             <li className="nav-item nav-logout d-none d-lg-block">
               <a className="nav-link"  >
-               
+
               </a>
             </li>
-           
+
           </ul>
           <button className="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
             <span className="mdi mdi-menu"></span>
@@ -159,36 +159,50 @@ setUserId(storeid)
                </button>
              </div>
              <div className="modal-body">
-             
-             <form onSubmit={handleSubmit}>
 
-                
-             <div className="form-group row">
-                      <label for="exampleInputUsername2" className="col-sm-3 col-form-label">User Name</label>
-                      <div className="col-sm-9">
-                        
-                      <input type="text" className="form-control" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}  placeholder="Enter Old Password" />
-                      </div>
-                    </div>
+          <form onSubmit={handleSubmit}>
+  <div className="form-group row">
+    {/* Change 'for' to 'htmlFor' */}
+    <label htmlFor="currentPassword" className="col-sm-3 col-form-label">
+      Current Password
+    </label>
+    <div className="col-sm-9">
+      <input
+        type="password"
+        className="form-control"
+        id="currentPassword"
+        value={currentPassword}
+        onChange={(e) => setCurrentPassword(e.target.value)}
+        placeholder="Enter Old Password"
+      />
+    </div>
+  </div>
 
-                    <div className="form-group row">
-                      <label for="exampleInputUsername2" className="col-sm-3 col-form-label">Password</label>
-                      <div className="col-sm-9">
-                      <input type="password" className="form-control"  value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter New Password" />
+  <div className="form-group row">
+    {/* Change 'for' to 'htmlFor' */}
+    <label htmlFor="newPassword" className="col-sm-3 col-form-label">
+      New Password
+    </label>
+    <div className="col-sm-9">
+      <input
+        type="password"
+        className="form-control"
+        id="newPassword"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        placeholder="Enter New Password"
+      />
+    </div>
+  </div>
 
-                      </div>
-                      </div>
+  <button type="submit" className="btn btn-outline-primary">
+    Change Password
+  </button>
+</form>
 
 
-          
-                      <button type="submit"   className="btn btn-outline-primary" >Change Password</button> 
-           
-            
-        </form>
-  
-             
              </div>
-          
+
            </div>
          </div>
        </div>

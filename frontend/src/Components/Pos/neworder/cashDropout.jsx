@@ -115,7 +115,7 @@ console.log(shiftstoken);
           if (result.isConfirmed) {
            // setModalCashDrop(false);
             navigate("/pos");
-          
+
           } else {
             setModalCashDrop(false);
             navigate("/pos");
@@ -123,7 +123,7 @@ console.log(shiftstoken);
         });
       })
       .catch((err) => console.log(err));
-     
+
 
 
   }
@@ -184,7 +184,7 @@ console.log(shiftstoken);
 
                           </tr>
 
-                        ))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+                        ))
                       }
                     </tbody>
                   </table>
@@ -194,16 +194,16 @@ console.log(shiftstoken);
                 <div className="row">
 
                   <div className="col-md-4">
-                    <div class="form-group">
+                    <div className="form-group">
                       <label for="exampleInputUsername1">Amount</label>
                       <input type="text" className="form-control" name="amount" value={amount} onChange={(e) => { setAmount(e.target.value) }} />
 
                     </div>
                   </div>
                   <div className="col-md-4">
-                    <div class="form-group">
+                    <div className="form-group">
                       <label for="exampleInputUsername1">Cash Drop/Out</label>
-                     
+
                       <select name="cashdrop" className={`form-control ${selectedOptionError ? 'is-invalid' : ''}`} onChange={handleCash} value={dropout}>
                      <option>Select Option</option>
                         {drop.map(option => (
@@ -216,7 +216,7 @@ console.log(shiftstoken);
                     </div>
                   </div>
                   <div className="col-md-4">
-                    <div class="form-group">
+                    <div className="form-group">
                       <label for="exampleInputUsername1">Notes</label>
                       <input type="text" className="form-control" name="notes" value={notes} onChange={(e) => { setNotes(e.target.value) }} />
 

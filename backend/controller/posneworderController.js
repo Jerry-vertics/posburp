@@ -31,7 +31,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: "$menuItemDetails" // Unwind the menuItemDetails array
         },
-  
+
         {
           $lookup: {
             from: "customers",
@@ -97,7 +97,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
             preserveNullAndEmptyArrays: true // Keep customerDetails even if it's null
           }
         },
-        
+
         {
           $group: {
             _id: "$_id",
@@ -118,19 +118,19 @@ const getAllPos =asyncHandler(async(req,res) =>{
               }
             },
             customerDetails: { $first: "$customerDetails" },
-  
+
             waiterDetails: { $first: "$waiterDetails" },
             userDetails:{$first:"$userDetails"},
-  
+
             deliveryDetails:{
               $first:"$deliveryDetails"
             },
-  
+
           }
         }
-        
+
       ]);
-    
+
       res.json(pos);
     } catch (error) {
       throw new Error(error);
@@ -138,126 +138,120 @@ const getAllPos =asyncHandler(async(req,res) =>{
   });
 
 
+const completePaymeny = asyncHandler(async(req, res) => {
+  const { id } = req.params;
 
-  const completePaymeny =asyncHandler(async(req,res) =>{
-    const { id } = req.params;
-  
-    try {
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ error: 'Invalid ObjectId' });
-      }
-      const pos = await Pos.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(id), // Match documents with the specified _id
-          },
-        },
-        {
-          $unwind: "$cart" // Flatten the cart array
-        },
-        {
-          $lookup: {
-            from: "foodmenus",
-            localField: "cart.foodmenuId",
-            foreignField: "_id",
-            as: "menuItemDetails"
-          },
-        },
-        {
-          $unwind: "$menuItemDetails" // Unwind the menuItemDetails array
-        },
-        {
-          $lookup: {
-            from: "customers",
-            localField: "customers",
-            foreignField: "_id",
-            as: "customerDetails"
-          },
-        },
-        {
-          $unwind: {
-            path: "$customerDetails",
-            preserveNullAndEmptyArrays: true // Keep customerDetails even if it's null
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "waiterId",
-            foreignField: "_id",
-            as: "waiterDetails"
-          },
-        },
-        {
-          $unwind: "$waiterDetails"
-        },
-        {
-          $lookup: {
-            from: "tables",
-            localField: "tableId",
-            foreignField: "_id",
-            as: "tableDetails"
-          },
-        },
-        {
-          // $unwind: "$tableDetails"
-          $unwind: {
-            path: "$tableDetails",
-            preserveNullAndEmptyArrays: true // Keep customerDetails even if it's null
-          },
-        },
-        {
-          $lookup: {
-            from: "delivery",
-            localField: "delivery",
-            foreignField: "_id",
-            as: "deliveryDetails"
-          }
-        },
-        {
-          $unwind: {
-            path: "$deliveryDetails",
-            preserveNullAndEmptyArrays: true // Keep customerDetails even if it's null
-          }
-        },
-        {
-          $group: {
-            _id: "$_id",
-            ordernumber: { $first: "$ordernumber" },
-            options: { $first: "$options" },
-            date:{$first: "$date"},
-            total: { $first: "$total" },
-            grandTotal: { $first: "$grandTotal" },
-            vatAmount: { $first: "$vatAmount" },
-            createdAt: { $first: "$createdAt" },
-            updatedAt: { $first: "$updatedAt" },
-            cart: {
-              $push: {
-                foodmenuId: "$cart.foodmenuId",
-                salesprice: "$cart.salesprice",
-                quantity: "$cart.quantity",
-                menuItemDetails: "$menuItemDetails"
-              }
-            },
-            customerDetails: { $first: "$customerDetails" },
-    
-            waiterDetails: { $first: "$waiterDetails" },
-  
-            deliveryDetails:{ $first :"$deliveryDetails" }
-          }
-        },
-      ]);
-    
-      res.json(pos);
-    } catch (error) {
-      console.error(error);
-      throw new Error(error);
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid ObjectId' });
     }
-    
-   
-  
-  });
 
+    const pos = await Pos.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id),
+        },
+      },
+      {
+        $unwind: "$cart"
+      },
+      {
+        $lookup: {
+          from: "foodmenus",
+          localField: "cart.foodmenuId",
+          foreignField: "_id",
+          as: "menuItemDetails"
+        },
+      },
+      {
+        $unwind: "$menuItemDetails"
+      },
+      {
+        $lookup: {
+          from: "customers",
+          localField: "customers",
+          foreignField: "_id",
+          as: "customerDetails"
+        },
+      },
+      {
+        $unwind: {
+          path: "$customerDetails",
+          preserveNullAndEmptyArrays: true
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "waiterId",
+          foreignField: "_id",
+          as: "waiterDetails"
+        },
+      },
+      {
+        $unwind: "$waiterDetails"
+      },
+      {
+        $lookup: {
+          from: "tables",
+          localField: "tableId",
+          foreignField: "_id",
+          as: "tableDetails"
+        },
+      },
+      {
+        $unwind: {
+          path: "$tableDetails",
+          preserveNullAndEmptyArrays: true
+        },
+      },
+      {
+        $lookup: {
+          from: "delivery",
+          localField: "delivery",
+          foreignField: "_id",
+          as: "deliveryDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$deliveryDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          ordernumber: { $first: "$ordernumber" },
+          options: { $first: "$options" },
+          date: { $first: "$date" },
+          total: { $first: "$total" },
+          grandTotal: { $first: "$grandTotal" },
+          vatAmount: { $first: "$vatAmount" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" },
+          cart: {
+            $push: {
+              foodmenuId: "$cart.foodmenuId",
+              salesprice: "$cart.salesprice",
+              quantity: "$cart.quantity",
+              menuItemDetails: "$menuItemDetails"
+            }
+          },
+          customerDetails: { $first: "$customerDetails" },
+          waiterDetails: { $first: "$waiterDetails" },
+          deliveryDetails: { $first: "$deliveryDetails" },
+          tableDetails: { $first: "$tableDetails" }  // Added this line
+        }
+      },
+    ]);
+
+    res.json(pos);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 
   const paidorders =asyncHandler(async(req,res) =>{
@@ -265,18 +259,18 @@ const getAllPos =asyncHandler(async(req,res) =>{
     try {
 
 
-     
+
       const matchCriteria = {
           paymentstatus: 'paid',
           // Add other match criteria as needed
         };
-    
-       
+
+
       const posinvoice = await Pos.aggregate([
           {
               $match: matchCriteria,
             },
-  
+
         {
           $lookup: {
             from: 'tables',
@@ -289,7 +283,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
           //$unwind: '$table',
           $unwind: {
             path: "$table",
-            preserveNullAndEmptyArrays: true 
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -303,7 +297,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: '$waiter',
         },
-  
+
         {
           $lookup: {
             from: 'users',
@@ -315,18 +309,18 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: '$user',
         },
-  
-  
-        
-  
+
+
+
+
       ]);
       res.json(posinvoice);
-     
-  
-     
+
+
+
     } catch (error) {
       console.error('Error fetching "notpaid" orders:', error);
-    
+
     }
 
 
@@ -335,24 +329,24 @@ const getAllPos =asyncHandler(async(req,res) =>{
 
 
 
-  
+
   const cancelorders =asyncHandler(async(req,res) =>{
 
     try {
 
 
-     
+
       const matchCriteria = {
           paymentstatus: 'Cancel',
           // Add other match criteria as needed
         };
-    
-       
+
+
       const posinvoice = await Pos.aggregate([
           {
               $match: matchCriteria,
             },
-  
+
         {
           $lookup: {
             from: 'tables',
@@ -365,7 +359,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
           //$unwind: '$table',
           $unwind: {
             path: "$table",
-            preserveNullAndEmptyArrays: true 
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -379,7 +373,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: '$waiter',
         },
-  
+
         {
           $lookup: {
             from: 'users',
@@ -404,18 +398,18 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: '$cancels',
         },
-  
-  
-        
-  
+
+
+
+
       ]);
       res.json(posinvoice);
-     
-  
-     
+
+
+
     } catch (error) {
       console.error('Error fetching "notpaid" orders:', error);
-    
+
     }
 
 
@@ -423,24 +417,24 @@ const getAllPos =asyncHandler(async(req,res) =>{
   });
 
 
-    
+
   const runningorders =asyncHandler(async(req,res) =>{
 
     try {
 
 
-     
+
       const matchCriteria = {
           paymentstatus: 'notpaid',
           // Add other match criteria as needed
         };
-    
-       
+
+
       const posinvoice = await Pos.aggregate([
           {
               $match: matchCriteria,
             },
-  
+
         {
           $lookup: {
             from: 'tables',
@@ -453,7 +447,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
           //$unwind: '$table',
           $unwind: {
             path: "$table",
-            preserveNullAndEmptyArrays: true 
+            preserveNullAndEmptyArrays: true
           }
         },
         {
@@ -467,7 +461,7 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: '$waiter',
         },
-  
+
         {
           $lookup: {
             from: 'users',
@@ -479,18 +473,18 @@ const getAllPos =asyncHandler(async(req,res) =>{
         {
           $unwind: '$user',
         },
-  
-  
-        
-  
+
+
+
+
       ]);
       res.json(posinvoice);
-     
-  
-     
+
+
+
     } catch (error) {
       console.error('Error fetching "notpaid" orders:', error);
-    
+
     }
 
 
@@ -500,4 +494,3 @@ const getAllPos =asyncHandler(async(req,res) =>{
 
 
   module.exports = {getAllPos,completePaymeny,paidorders,cancelorders,runningorders}
-  

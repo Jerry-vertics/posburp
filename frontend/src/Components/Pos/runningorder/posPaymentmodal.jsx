@@ -16,6 +16,7 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printData, setPrintData] = useState(null);
   const [orderData, setOrderData] = useState(null);
+  const [showPaymentSection, setShowPaymentSection] = useState(false); // New state for payment section
   const componentRef = useRef();
 
   const imageName = "taha.png";
@@ -129,6 +130,35 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
       });
   }
 
+  const handleCloseTable = () => {
+    // Add your close table logic here
+    Swal.fire({
+      title: 'Close Table?',
+      text: 'Are you sure you want to close this table?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, close table'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Add your API call to close the table here
+        Swal.fire(
+          'Closed!',
+          'Table has been closed.',
+          'success'
+        ).then(() => {
+          closeModal();
+          navigate('/runningorder');
+        });
+      }
+    });
+  }
+
+  const handlePayBill = () => {
+    setShowPaymentSection(true);
+  }
+
   // Helper function to safely convert to number
   const safeToNumber = (value) => {
     if (value === null || value === undefined) return 0;
@@ -158,6 +188,9 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
 
   const closeModal = () => {
     setShowModal(false);
+    setShowPaymentSection(false); // Reset payment section when closing modal
+    setPays(''); // Reset payment selection
+    setPaymentError(''); // Reset payment error
   };
 
   const closePrintModal = () => {
@@ -283,42 +316,79 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
                         </div>
                       </div>
 
-                      <div className="form-group row mt-4">
-                        <label className="col-sm-3 col-form-label">Payment Method</label>
-                        <div className="col-sm-9">
-                          <select
-                            className={`form-control ${paymentError ? 'is-invalid' : ''}`}
-                            onChange={handlePays}
-                            value={payments}
-                            required
+                      {/* Action Buttons - Always visible */}
+                      <div className="row mt-4">
+                        <div className="col-12 text-center">
+                          <button
+                            type="button"
+                            className="btn btn-secondary mr-3"
+                            onClick={handleCloseTable}
+                            style={{ minWidth: '120px' }}
                           >
-                            <option value="">Select Payment</option>
-                            {payment.map(option => (
-                              <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                          {paymentError && (
-                            <div className="invalid-feedback">{paymentError}</div>
-                          )}
+                            <i className="fas fa-times-circle mr-2"></i>
+                            Close Table
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={handlePayBill}
+                            style={{ minWidth: '120px' }}
+                          >
+                            <i className="fas fa-credit-card mr-2"></i>
+                            Pay Bill
+                          </button>
                         </div>
                       </div>
 
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={(e) => handleMakePayment(order._id, order)}
-                        >
-                          Pay Now
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={closeModal}
-                        >
-                          Close
-                        </button>
-                      </div>
+                      {/* Payment Section - Only shown when Pay Bill is clicked */}
+                      {showPaymentSection && (
+                        <>
+                          <div className="row mt-4">
+                            <div className="col-12">
+                              <hr />
+                              <h6 className="mb-3">Payment Details</h6>
+                            </div>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-3 col-form-label">Payment Method</label>
+                            <div className="col-sm-9">
+                              <select
+                                className={`form-control ${paymentError ? 'is-invalid' : ''}`}
+                                onChange={handlePays}
+                                value={payments}
+                                required
+                              >
+                                <option value="">Select Payment</option>
+                                {payment.map(option => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                              {paymentError && (
+                                <div className="invalid-feedback">{paymentError}</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="modal-footer">
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={(e) => handleMakePayment(order._id, order)}
+                            >
+                              <i className="fas fa-check-circle mr-2"></i>
+                              Confirm Payment
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={closeModal}
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 })
