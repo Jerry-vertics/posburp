@@ -9,6 +9,7 @@ import PosNewKotmodal from "./posNeworderkotlist";
 import { useReactToPrint } from 'react-to-print';
 
 const PosNeworderKotModal = ({ isModalOpen, setModalOpen }) => {
+
   const [posRunningorder, setPosRunningorder] = useState([]);
   const [searchKotTerm, setSearchKotTerm] = useState('');
   const [kotdata, setkotData] = useState(null);
@@ -110,6 +111,8 @@ const PosNeworderKotModal = ({ isModalOpen, setModalOpen }) => {
     setKotToPrint(order);
     setShowPrintPreview(true);
   };
+
+   if (!isModalOpen) return null;
 
   return (
     <div>
