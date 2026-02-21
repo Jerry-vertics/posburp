@@ -143,7 +143,7 @@ const ViewUser =() =>{
         <div>
           <Link to={`/edituser/${row._id}`} className="btn btn-primary"></Link>
           {row.status === "Active" ? (
-            <button onClick={(e) => handleDeactivate(row._id)} className="btn btn-danger ml-2"></button>
+            <button onClick={(e) => handleDeactivate(row._id)} className="btn btn-danger ml-2">+</button>
           ) : (
             <button onClick={(e) => handleActivate(row._id)} className="btn btn-success ml-2"></button>
           )}
