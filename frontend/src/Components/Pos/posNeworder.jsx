@@ -1054,7 +1054,7 @@ const PosNewOrder = () => {
                                 <button
                                   className="btn btn-outline-secondary btn-sm"
                                   type="button"
-                                  style={{ marginLeft: "-15px" }}
+                                  style={{ marginLeft: "-10px" }}
                                   onClick={() => handlePersonCountChange(tables._id, 'decrement')}
                                   disabled={
                                     tables.availableSeat === 0 ||
