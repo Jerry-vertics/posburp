@@ -88,7 +88,7 @@ const PosNeworderKotModal = ({ isModalOpen, setModalOpen }) => {
       });
   };
 
-  // Calculate totals for KOT
+
   const calculateKotTotals = (cart) => {
     if (!cart || cart.length === 0) {
       return { subtotal: 0, totalQty: 0 };
