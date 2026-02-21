@@ -42,6 +42,8 @@ import PrintComponent from "./print/posPrint";
 import PosCancelOrder from "./neworder/posCancelOrders";
 import PosNewCustomerModal from "./neworder/PosNewCustomerModal";
 
+
+
 const PosNewOrder = () => {
   // ============= STATE DECLARATIONS =============
   const [addedby, setuserid] = useState("");
@@ -1344,7 +1346,8 @@ const PosNewOrder = () => {
                             <div className="col-sm-6 col-md-4 col-lg-3" key={index}>
                               <div className="foodmenu-box" onClick={() => addProductToCart(menu)}>
                                 <div className="foodmenu-div">
-                                  <img src={`/uploads/${menu.photo}`} className="foodimg" alt={menu.foodmenuname} />
+                                  {/* <img src={`/uploads/${menu.photo}`} className="foodimg" alt={menu.foodmenuname} /> */}
+                                  <img src="assets/images/foodmenu.jpg" className="foodimg" alt={menu.foodmenuname} />
                                   <div className="menu-details">
                                     <h6 className="mt-2">{menu.foodmenuname}</h6>
                                     <p>AED: {menu.salesprice}</p>
