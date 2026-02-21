@@ -1624,7 +1624,7 @@ const PosNewOrder = () => {
       </div>
 
       {/* Main Content Column */}
-      <div className="col-12 col-sm-12 col-md-5 col-lg-7 ">
+      <div className="col-12 col-sm-12 col-md-5 col-lg-7">
         <div className="poscards">
           <div className="tbl-h">
             {/* <ul className="nav nav-tabs nav-justified" role="tablist">
