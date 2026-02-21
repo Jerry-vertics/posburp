@@ -403,11 +403,11 @@ const PosNeworderKotModal = ({ isModalOpen, setModalOpen }) => {
       )}
 
       {/* Existing KOT Detail Modal */}
-      <PosNewKotmodal
+      {/* <PosNewKotmodal
         kotdata={kotdata}
         showkotModal={showkotModal}
         setShowKotModal={setShowKotModal}
-      />
+      /> */}
 
       {/* Background overlay */}
       <div className={`modal-backdrop ${isModalOpen ? 'show' : ''}`} style={{ display: isModalOpen ? 'block' : 'none' }}></div>
