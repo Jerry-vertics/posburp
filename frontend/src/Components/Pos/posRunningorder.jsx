@@ -187,7 +187,7 @@ const handleEdit =(id) =>
         </div>
        </div>
        <div className="col-md-2">
-       <a class="btn btn-outline-primary" onClick={handleMergeRequest}>Merge</a>
+       <a className="btn btn-outline-primary" onClick={handleMergeRequest}>Merge</a>
        </div>
 
 

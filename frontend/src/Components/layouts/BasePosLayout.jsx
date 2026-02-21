@@ -51,7 +51,7 @@ const BasePosLayout = ({ activeTab, children }) => {
           <div className="col-md-2">
             <div className="w-100 d-inline-block text-center pt-3">
               <Link to="/dashboard">
-                <img src="assets/images/pos/burps.png" className="img-fluid" alt="Burps" />
+                <img src="assets/images/pos/burps.png" className="img-fluid posimgs" alt="Burps" />
               </Link>
             </div>
           </div>

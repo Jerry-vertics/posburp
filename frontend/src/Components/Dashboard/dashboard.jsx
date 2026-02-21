@@ -1,146 +1,215 @@
-import React from 'react'
-import { useState,useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import Header from '../layouts/Header';
 import Sidebar from '../layouts/Sidebar';
 import Footer from '../layouts/Footer';
-import axios from 'axios'
-import { redirect, useNavigate,useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import apiConfig from '../layouts/base_url';
-import Chart from 'chart.js/auto';
 import DashboardGraph from './dashboardGraph';
 
-//import jwtDecode from 'jwt-decode';
-const Dashboard =() =>{
+const Dashboard = () => {
+  const navigate = useNavigate();
 
-  const navigate =useNavigate();
+  // State management
+  const [dashboardData, setDashboardData] = useState({
+    todayOrderCount: 0,
+    totalOrderCount: 0,
+    todayPaidCount: 0,
+    totalPaidAmount: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Sign out function
   const signOut = () => {
-    localStorage.removeItem('token')
+    localStorage.removeItem('token');
     navigate("/");
-}
-const cardBodyStyle = {
-  padding: '0',
-  // Add more styles for card body as needed
-};
+  };
 
-const [todayordercount, setTodayorderCount] = useState(0);
-const [totalordercount, setTotalorderCount] = useState(0);
-const [todaypaidcount,setpaidCount] =useState(0);
-const [totalpaidamount,setTotalpaidamount] =useState(0);
+  // Fetch all dashboard data in one effect
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
+        // Use Promise.all to fetch all data concurrently
+        const [todayOrderRes, totalOrderRes, todayPaidRes, totalPaidRes] = await Promise.all([
+          fetch(`${apiConfig.baseURL}/api/dashboard/todayorder`),
+          fetch(`${apiConfig.baseURL}/api/dashboard/totalorder`),
+          fetch(`${apiConfig.baseURL}/api/dashboard/todaypaidsales`),
+          fetch(`${apiConfig.baseURL}/api/dashboard/oveallsales`)
+        ]);
 
-useEffect(() => {
- fetch(`${apiConfig.baseURL}/api/dashboard/todayorder`)
-    .then((response) => response.json())
-    .then((data) => setTodayorderCount(data.count))
-    .catch((error) => console.error(error));
-}, []);
+        // Check if all responses are ok
+        if (!todayOrderRes.ok || !totalOrderRes.ok || !todayPaidRes.ok || !totalPaidRes.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
 
-useEffect(() => {
-  fetch(`${apiConfig.baseURL}/api/dashboard/totalorder`)
-     .then((response) => response.json())
-     .then((data) => setTotalorderCount(data.count))
-     .catch((error) => console.error(error));
- }, []);
+        // Parse all responses
+        const [todayOrderData, totalOrderData, todayPaidData, totalPaidData] = await Promise.all([
+          todayOrderRes.json(),
+          totalOrderRes.json(),
+          todayPaidRes.json(),
+          totalPaidRes.json()
+        ]);
 
+        setDashboardData({
+          todayOrderCount: todayOrderData.count || 0,
+          totalOrderCount: totalOrderData.count || 0,
+          todayPaidCount: todayPaidData.sum || 0,
+          totalPaidAmount: totalPaidData.sum || 0
+        });
 
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
- useEffect(() => {
-  fetch(`${apiConfig.baseURL}/api/dashboard/todaypaidsales`)
-    .then((response) => response.json())
-    .then((data) => setpaidCount(data.sum))
-    .catch((error) => console.error(error));
-}, []);
+    fetchDashboardData();
+  }, []); // Empty dependency array means this runs once on mount
 
-useEffect(() => {
-  fetch(`${apiConfig.baseURL}/api/dashboard/oveallsales`)
-    .then((response) => response.json())
-    .then((data) => setTotalpaidamount(data.sum))
-    .catch((error) => console.error(error));
-}, []);
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
 
-
-
-
-
-
-
+  // Loading state
+  if (loading) {
     return (
-        <div className="container-scroller">
+      <div className="container-scroller">
         <Header />
         <div className="container-fluid page-body-wrapper">
-            <Sidebar />
-            <div className="main-panel">
+          <Sidebar />
+          <div className="main-panel">
             <div className="content-wrapper">
+              <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+              </div>
+            </div>
+            <Footer />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container-scroller">
+        <Header />
+        <div className="container-fluid page-body-wrapper">
+          <Sidebar />
+          <div className="main-panel">
+            <div className="content-wrapper">
+              <div className="alert alert-danger" role="alert">
+                Error loading dashboard: {error}
+              </div>
+            </div>
+            <Footer />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Stats cards configuration
+  const statCards = [
+    {
+      title: "Today's Orders",
+      value: dashboardData.todayOrderCount,
+      icon: "mdi-chart-line",
+      gradient: "bg-gradient-danger",
+      color: "text-white"
+    },
+    {
+      title: "Today's Sales",
+      value: formatCurrency(dashboardData.todayPaidCount),
+      icon: "mdi-bookmark-outline",
+      gradient: "bg-gradient-info",
+      color: "text-white"
+    },
+    {
+      title: "Total Orders",
+      value: dashboardData.totalOrderCount,
+      icon: "mdi-diamond",
+      gradient: "bg-gradient-success",
+      color: "text-white"
+    },
+    {
+      title: "Total Sales",
+      value: formatCurrency(dashboardData.totalPaidAmount),
+      icon: "mdi-cash-multiple",
+      gradient: "bg-gradient-success",
+      color: "text-white"
+    }
+  ];
+
+  return (
+    <div className="container-scroller">
+      <Header />
+      <div className="container-fluid page-body-wrapper">
+        <Sidebar />
+        <div className="main-panel">
+          <div className="content-wrapper">
+            {/* Page Header */}
             <div className="page-header">
               <h3 className="page-title">
                 <span className="page-title-icon bg-gradient-primary text-white me-2">
                   <i className="mdi mdi-home"></i>
-                </span> Dashboard
+                </span>
+                Dashboard
               </h3>
               <nav aria-label="breadcrumb">
                 <ul className="breadcrumb">
                   <li className="breadcrumb-item active" aria-current="page">
-                    <span></span>Overview <i className="mdi mdi-alert-circle-outline icon-sm text-primary align-middle"></i>
+                    <span></span>Overview
+                    <i className="mdi mdi-alert-circle-outline icon-sm text-primary align-middle"></i>
                   </li>
                 </ul>
               </nav>
             </div>
+
+            {/* Stats Cards */}
             <div className="row">
-              <div className="col-md-3 stretch-card grid-margin">
-                <div className="card bg-gradient-danger card-img-holder text-white" >
-                  <div className="card-body" >
-                    <img src="assets/images/dashboard/circle.svg" className="card-img-absolute" alt="circle-image" />
-                    <h4 className="font-weight-normal mb-3">Today Orders <i className="mdi mdi-chart-line mdi-24px float-right"></i>
-                    </h4>
-                    <h2 className="mb-5">{ todayordercount }</h2>
-
+              {statCards.map((card, index) => (
+                <div key={index} className="col-md-3 stretch-card grid-margin">
+                  <div className={`card ${card.gradient} card-img-holder ${card.color}`}>
+                    <div className="card-body">
+                      <img
+                        src="assets/images/dashboard/circle.svg"
+                        className="card-img-absolute"
+                        alt="circle-background"
+                      />
+                      <h4 className="font-weight-normal mb-3">
+                        {card.title}
+                        <i className={`mdi ${card.icon} mdi-24px float-right`}></i>
+                      </h4>
+                      <h2 className="mb-5">{card.value}</h2>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="col-md-3 stretch-card grid-margin">
-                <div className="card bg-gradient-info card-img-holder text-white">
-                  <div className="card-body">
-                    <img src="assets/images/dashboard/circle.svg" className="card-img-absolute" alt="circle-image" />
-                    <h4 className="font-weight-normal mb-3">Today Sales <i className="mdi mdi-bookmark-outline mdi-24px float-right"></i>
-                    </h4>
-                    <h2 className="mb-5">{todaypaidcount}</h2>
-
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 stretch-card grid-margin">
-                <div className="card bg-gradient-success card-img-holder text-white">
-                  <div className="card-body">
-                    <img src="assets/images/dashboard/circle.svg" className="card-img-absolute" alt="circle-image" />
-                    <h4 className="font-weight-normal mb-3">Total Orders <i className="mdi mdi-diamond mdi-24px float-right"></i>
-                    </h4>
-                    <h2 className="mb-5">{totalordercount}</h2>
-
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3 stretch-card grid-margin">
-                <div className="card bg-gradient-success card-img-holder text-white">
-                  <div className="card-body">
-                    <img src="assets/images/dashboard/circle.svg" className="card-img-absolute" alt="circle-image" />
-                    <h4 className="font-weight-normal mb-3">Total Sales  <i className="mdi mdi-diamond mdi-24px float-right"></i>
-                    </h4>
-                    <h2 className="mb-5">{totalpaidamount}</h2>
-
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
-         <DashboardGraph />
 
-
-
+            {/* Graphs Section */}
+            <DashboardGraph />
           </div>
-                    <Footer />
-            </div>
+          <Footer />
         </div>
+      </div>
     </div>
-    )
-}
+  );
+};
 
 export default Dashboard;

@@ -1605,17 +1605,7 @@ const PosNewOrder = () => {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Main Content Column */}
-      <div className="col-12 col-sm-12 col-md-5 col-lg-7 ">
-        <div className="poscards">
-          <div className="tbl-h">
-            <ul className="nav nav-tabs nav-justified" role="tablist">
-              {/* Tab headers can be added here if needed */}
-            </ul>
-          </div>
-          <div className="datetime-display border-bottom d-flex justify-content-between align-items-center">
+         <div className="datetime-display border-bottom d-flex justify-content-between align-items-center">
             <div className="current-time">
               <FaClock className="mr-2" />
               <span>{currentDateTime.toLocaleTimeString()}</span>
@@ -1631,7 +1621,18 @@ const PosNewOrder = () => {
               })}</span>
             </div>
           </div>
-          <div className="tab-content mt-3" style={{ overflowY: 'scroll' }}>
+      </div>
+
+      {/* Main Content Column */}
+      <div className="col-12 col-sm-12 col-md-5 col-lg-7 ">
+        <div className="poscards">
+          <div className="tbl-h">
+            {/* <ul className="nav nav-tabs nav-justified" role="tablist">
+
+            </ul> */}
+          </div>
+
+          <div className="tab-content" style={{ overflowY: 'scroll' }}>
             {getCurrentTabContent()}
           </div>
         </div>
