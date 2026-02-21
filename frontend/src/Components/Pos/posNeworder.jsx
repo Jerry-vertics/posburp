@@ -29,7 +29,7 @@ import { MdOutlinePayment } from "react-icons/md";
 import { MdBookOnline } from "react-icons/md";
 import { MdDeliveryDining } from "react-icons/md";
 import { MdOutlineTakeoutDining } from "react-icons/md";
-import PosNeworderKotModal from "./neworder/posNeworderkotModal";
+import PosNeworderKotModal from './neworder/posNeworderkotmodal'
 import PosNewHoldingModal from "./neworder/posNewHoldingmodal";
 import PosCashDrop from "./neworder/cashDropout";
 import PosInvoiceReport from "./neworder/posinvoiceReport";
