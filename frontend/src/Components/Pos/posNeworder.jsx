@@ -914,7 +914,7 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Dine In')}
                 >
-                  <FaCcDinersClub className="option-icon" />
+                 <img src="assets/images/dinein.png" />
                   <h5>Dine In</h5>
                 </div>
               </div>
@@ -923,7 +923,7 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Take Away')}
                 >
-                  <MdOutlineTakeoutDining className="option-icon" />
+                   <img src="assets/images/takeway.png" />
                   <h5>Take Away</h5>
                 </div>
               </div>
@@ -932,7 +932,7 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Delivery')}
                 >
-                  <CiDeliveryTruck className="option-icon" />
+                  <img src="assets/images/delivery.png" />
                   <h5>Delivery</h5>
                 </div>
               </div>
@@ -941,7 +941,8 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Online')}
                 >
-                  <MdBookOnline className="option-icon" />
+                  {/* <MdBookOnline className="option-icon" /> */}
+                  <img src="assets/images/online.png" />
                   <h5>Online</h5>
                 </div>
               </div>
@@ -950,7 +951,8 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Carhop')}
                 >
-                  <FaCar className="option-icon" />
+                  {/* <FaCar className="option-icon" /> */}
+                   <img src="assets/images/carhop.png" />
                   <h5>Carhop</h5>
                 </div>
               </div>

@@ -1427,8 +1427,8 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
 .option-box:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(135deg, #c82333 0%, #c82333 100%);
-  color: #fff;
+   background: #e9ecef;
+  color: #000;
 
 }
 
