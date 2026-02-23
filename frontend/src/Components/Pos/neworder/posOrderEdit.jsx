@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import apiConfig from '../../layouts/base_url';
 import Swal from 'sweetalert2';
 import { useReactToPrint } from 'react-to-print';
+import foodmenuimg from '../../../../public/assets/images/foodmenu.jpg'
 
 const PosOrderEdit = () => {
   const { id } = useParams();
@@ -60,9 +61,11 @@ const PosOrderEdit = () => {
 
           initialVat = (initialTotal * 5) / 100;
 
-          setTotalAmount(initialTotal);
+
+
+          setTotalAmount(initialTotal - initialVat);
           setTotalVat(initialVat);
-          setGrandTotal(initialTotal + initialVat);
+          setGrandTotal(initialTotal);
         } else {
           console.log("Cart data is not available or is in an unexpected format.");
         }
@@ -94,9 +97,11 @@ const PosOrderEdit = () => {
 
     newVatAmount = (newTotalAmount * 5) / 100;
 
-    setTotalAmount(newTotalAmount);
+    //newSubtotalAmount =newTotalAmount -
+
+    setTotalAmount(newTotalAmount - newVatAmount);
     setTotalVat(newVatAmount);
-    setGrandTotal(newTotalAmount + newVatAmount);
+    setGrandTotal(newTotalAmount);
   }, [cart]);
 
   // Handle search
@@ -378,7 +383,7 @@ const PosOrderEdit = () => {
       <ToastContainer />
 
       {/* Left Panel - Cart Summary */}
-      <div className="col-sm-4 col-lg-auto">
+      <div className="col-sm-4 col-lg-4">
         <div className="wraper shdw">
           <div className="table-responsive vh-70" style={{ height: "300px", overflowY: "scroll" }}>
             <table className="table">
@@ -396,7 +401,7 @@ const PosOrderEdit = () => {
                   <tr key={key}>
                     <td>{key + 1}</td>
                     <td>{cartProduct.foodmenuname}</td>
-                    <td>${cartProduct.salesprice}</td>
+                    <td>{cartProduct.salesprice}</td>
                     <td>
                       <button className='btn btn-danger btn-sm cartminus' onClick={() => handleDecrement(cartProduct)}>-</button>
                       <input type="text" style={{ width: '20px' }} value={cartProduct.quantity} readOnly />
@@ -420,15 +425,15 @@ const PosOrderEdit = () => {
             <table className="table">
               <tr>
                 <td>Subtotal</td>
-                <th className="text-right">${totalAmount.toFixed(2)}</th>
+                <th className="text-right">{totalAmount.toFixed(2)}</th>
               </tr>
               <tr>
                 <td>VAT (5%)</td>
-                <th className="text-right">${vatAmount.toFixed(2)}</th>
+                <th className="text-right">{vatAmount.toFixed(2)}</th>
               </tr>
               <tr>
                 <th>Grand Total</th>
-                <th className="text-right">${grandTotal.toFixed(2)}</th>
+                <th className="text-right">{grandTotal.toFixed(2)}</th>
               </tr>
             </table>
           </div>
@@ -450,70 +455,128 @@ const PosOrderEdit = () => {
       </div>
 
       {/* Right Panel - Food Menu */}
-      <div className="col-sm-7 col-lg-7">
+      <div className="col-sm-7 col-lg-8">
         <div className="tbl-h">
-          <ul className="nav nav-tabs nav-justified" role="tablist">
-            <li className="nav-item">
-              <a className="nav-link pos active" data-toggle="tab" href="#foodmenu" role="tab">
-                <IoFastFoodSharp className="mr-2" />Food Menu
-              </a>
-            </li>
-          </ul>
+
         </div>
 
         <div className="tab-content mt-3">
-          <div className="tab-pane active" id="foodmenu" role="tabpanel">
-            <div className="tbl-h">
-              <div className="form-group">
-                <input
-                  type="text"
-                  placeholder="Search foodmenu..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="form-control"
-                />
-              </div>
+             <div className="tab-pane active" id="foodmenu" role="tabpanel">
 
-              <ul className="nav nav-pills flex-columns shdw-lft" id="myTab" role="tablist">
-                {distinctCategories.map((category, index) => (
-                  <li className="nav-item" key={index}>
-                    <a
-                      className={`nav-link ${index === activeTab ? 'active' : ''}`}
-                      onClick={() => setActiveTab(index)}
-                    >
-                      {category}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Food Items Grid */}
-            <div className="tab-content p-3" id="myTabContents">
-              {isLoading ? (
-                <div className="text-center">Loading...</div>
-              ) : (
-                <div className="row">
-                  {foodCategory.length > 0 &&
-                    foodCategory
-                      .filter(item =>
-                        item.foodcategory.foodcategoryname === distinctCategories[activeTab] &&
-                        item.foodmenuname.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
-                      .map((menu, index) => (
-                        <div className="col-sm-3 col-sm-3" key={index}>
-                          <div className="menu-box" onClick={() => addProductToCart(menu)}>
-                            <div className="menu-div">
-                              <h6 className="mt-2">{menu.foodmenuname}</h6>
-                              <p>Price: ${menu.salesprice}</p>
-                            </div>
+                    <div className="tbl-h">
+                      <div className="form-group">
+                        <input
+                          type="text"
+                          placeholder="Search foodmenu..."
+                          value={searchTerm}
+                          onChange={handleSearch}
+                          className="form-control"
+                        />
+                      </div>
+                      <div className="row" style={{ margin: 0 }}>
+                        <div className="col-md-3" style={{ paddingRight: 0 }}>
+                          <div
+                            className="nav flex-column nav-pills shdw-lft"
+                            id="v-tabs"
+                            role="tablist"
+                            aria-orientation="vertical"
+                            style={{
+                              height: '500px',
+                              maxHeight: '500px',
+                              minHeight: '500px',
+                              overflowY: 'scroll',
+                              overflowX: 'hidden',
+                              padding: '10px 5px',
+                              backgroundColor: '#f8f9fa',
+                              borderRadius: '8px 0 0 8px',
+                            }}
+                          >
+                            {distinctCategories && distinctCategories.length > 0 ? (
+                              distinctCategories.map((category, index) => (
+                                <a
+                                  key={index}
+                                  className={`nav-link text-left ${index === activeTab ? "active" : ""}`}
+                                  onClick={() => handleTabsClick(index)}
+                                  style={{
+                                    cursor: 'pointer',
+                                    marginBottom: '5px',
+                                    borderRadius: '5px',
+                                    whiteSpace: 'normal',
+                                    wordWrap: 'break-word',
+                                    textAlign: 'left',
+                                    fontSize: '12px',
+                                    width: '100%',
+                                  }}
+                                >
+                                  {category}
+                                </a>
+                              ))
+                            ) : (
+                              <div className="text-center p-3">No categories found</div>
+                            )}
                           </div>
                         </div>
-                      ))}
-                </div>
-              )}
-            </div>
-          </div>
+                        <div className="col-md-9" style={{ paddingLeft: 0 }}>
+                          <div
+                            className="tab-content p-3"
+                            id="v-tabContents"
+                            style={{
+                              height: '500px',
+                              maxHeight: '500px',
+                              minHeight: '500px',
+                              overflowY: 'scroll',
+                              backgroundColor: '#fff',
+                              borderRadius: '0 8px 8px 0',
+                              border: '1px solid #dee2e6'
+                            }}
+                          >
+                            {isLoading ? (
+                              <div className="text-center p-5">Loading...</div>
+                            ) : (
+                              <div className="row">
+                                {foodCategory.length > 0 &&
+                                  foodCategory
+                                    .filter(
+                                      (item) =>
+                                        item.foodcategory.foodcategoryname ===
+                                          distinctCategories[activeTab] &&
+                                        item.foodmenuname
+                                          .toLowerCase()
+                                          .includes(searchTerm.toLowerCase())
+                                    )
+                                    .map((menu, index) => (
+                                      <div className="col-sm-6 col-md-4 col-lg-3" key={index}>
+                                        <div className="foodmenu-box" onClick={() => addProductToCart(menu)}>
+                                          <div className="foodmenu-div">
+                                            {/* <img src={`/uploads/${menu.photo}`} className="foodimg" alt={menu.foodmenuname} /> */}
+                                          <img src={foodmenuimg} className="foodimg" alt={menu.foodmenuname} />
+                                            <div className="menu-details">
+                                              <h6 className="mt-2">{menu.foodmenuname}</h6>
+                                              <p>AED: {menu.salesprice}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                {foodCategory.filter(
+                                  (item) =>
+                                    item.foodcategory.foodcategoryname ===
+                                      distinctCategories[activeTab] &&
+                                    item.foodmenuname
+                                      .toLowerCase()
+                                      .includes(searchTerm.toLowerCase())
+                                ).length === 0 && (
+                                  <div className="col-12 text-center p-4">
+                                    No items found in this category
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
         </div>
       </div>
 

@@ -31,11 +31,11 @@ const PosCancelOrder = ({ isModalCanelOrders, setModalCancelOrders }) => {
 
   //   axios.get(`${apiConfig.baseURL}/api/pos/closingBalance?shiftstoken=${encodeURIComponent(shiftstoken)}`)
   //  // axios.fetch(`${apiConfig.baseURL}/api/pos/closingBalance?shiftstoken=${encodeURIComponent(shiftstoken)}`)
-     
+
   //     .then((response) => response.json())
   //     .then((data) => setPosCloseBalance(data))
   //    .catch((error) => console.error(error));
-  
+
   // }, []);
   // console.log(posclosebalance);
 
@@ -106,7 +106,7 @@ const PosCancelOrder = ({ isModalCanelOrders, setModalCancelOrders }) => {
 
     fetchDatas();
   }, [addedby, shiftaccess]);
-  
+
 
   let overallTotal = 0;
 
@@ -127,9 +127,9 @@ const PosCancelOrder = ({ isModalCanelOrders, setModalCancelOrders }) => {
           <div className="modal-body">
             <div className="container">
               <div className="row">
-              {posclosebalance.length > 0 ? (
+{posclosebalance.length > 0 ? (
   posclosebalance.map((order) => (
-    <React.Fragment key={order.id}>
+    <React.Fragment key={order._id || order.id}>
       <div>
         <h3>Opening Balance Amount: {order.amount}</h3>
       </div>
@@ -150,7 +150,7 @@ const PosCancelOrder = ({ isModalCanelOrders, setModalCancelOrders }) => {
                 overallTotal += paymentTotal;
 
                 return (
-                  <tr key={payment._id}>
+                  <tr key={payment._id || `payment-${index}`}>
                     <td>{index + 1}</td>
                     <td>{payment.bilnumber}</td>
                     <td>{payment.grandTotal}</td>
