@@ -5,11 +5,13 @@ import { FaShoppingCart, FaHistory, FaRegCalendarAlt } from 'react-icons/fa';
 import { MdBookOnline } from "react-icons/md";
 import { IoMdToday } from "react-icons/io";
 import newUser from '../layouts/newUser';
+import BurpLogo from '../../../public/assets/images/pos/burps.png';
 
 const BasePosLayout = ({ activeTab, children }) => {
   const { fullName } = newUser();
 
     const faceimage ="face1.jpg"
+    const BurpLogo ="burps.png"
 
   const tabs = [
     {
@@ -51,7 +53,7 @@ const BasePosLayout = ({ activeTab, children }) => {
           <div className="col-md-2">
             <div className="w-100 d-inline-block text-center pt-3">
               <Link to="/dashboard">
-                <img src="assets/images/pos/burps.png" className="img-fluid posimgs" alt="Burps" />
+                <img  src={`/assets/images/pos/${BurpLogo}`} className="img-fluid posimgs" alt="Burps" />
               </Link>
             </div>
           </div>
