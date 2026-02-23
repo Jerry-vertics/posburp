@@ -38,25 +38,19 @@ app.listen(PORT, () => {
   console.log(`Server is running at PORT ${PORT}`);
 });
 
-
-
-const allowedOrigins = ['https://posburp-8xrf.vercel.app']; // No trailing slash
+const allowedOrigins = ['https://posburp-8xrf.vercel.app'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('Origin blocked by CORS:', origin); // Add this for debugging
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Add this since you're using cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'] // Add Authorization if needed
+  allowedHeaders: ['Content-Type'],
+  credentials: true // Add this if you're using cookies
 }));
 
 //app.use(cors());
