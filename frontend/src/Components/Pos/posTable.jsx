@@ -2,9 +2,10 @@ import React from "react";
 import { useState,useEffect } from "react";
 import axios from "axios";
 import { redirect, useNavigate,Link } from "react-router-dom";
+import apiConfig from "../layouts/base_url";
 const PosTable =() =>{
   const [table, setTable] = useState([]);
- 
+
   const [showTable, setShowTable] = useState(false);
   const handleCloseTable =() =>{
     setShowTable(false);
@@ -18,8 +19,8 @@ const PosTable =() =>{
   };
 
   useEffect(() => {
-     
-      axios.get('http://localhost:5000/api/pos/posTable')
+
+      axios.get(`${apiConfig.baseURL}/api/pos/posTable`)
       .then((response) => {
           setTable(response.data);
       })
@@ -31,7 +32,7 @@ const PosTable =() =>{
 
     return (
         <>
-     
+
 
       {/* Table */}
       <div
@@ -56,10 +57,10 @@ const PosTable =() =>{
             </div>
             <div className="modal-body">
             <div className="row">
-       
+
             {
                   table.map((tables) =>(
-               
+
                 <div className="col-md-3">
                      <div className="card">
                    <img style={containerStyle} src="assets/images/table.png" className="center" alt="logo" />
@@ -73,8 +74,8 @@ const PosTable =() =>{
                 </div>
                   ))
             }
-           
-       
+
+
 
 
 
@@ -92,7 +93,7 @@ const PosTable =() =>{
               </button>
               <button type="submit" className="btn btn-gradient-primary me-2">Submit</button>
             </div>
-           
+
           </div>
         </div>
       </div>

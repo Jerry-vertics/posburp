@@ -8,11 +8,11 @@ import axios from "axios";
 import { redirect, useNavigate,Link } from "react-router-dom";
 import PosTable from "./posTable";
 import PosRunningOrder from "./posRunningorder";
-
+import apiConfig from "../layouts/base_url";
 
 const Pos =() =>{
 
-  
+
 
     const customStyle = {
         paddingTop: '84px', // Adjust the value as needed
@@ -31,7 +31,7 @@ const Pos =() =>{
         marginRight: 'auto',
         width: '50%',
       };
-    
+
 
     const [foodCategory, setFoodcategory] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -43,15 +43,15 @@ const Pos =() =>{
     const [customer, setCustomer] = useState([]);
     const [customers, setCustomers] = useState('');
     const [activeTab, setActiveTab] = useState(0);
-  
+
     //const distinctCategories = Array.from(new Set(foodCategory.map(item => item.foodcategory.foodcategoryname)));
     const distinctCategories = [...new Set(foodCategory.map(item => item.foodcategory.foodcategoryname))];
-  
+
     const [isLoading, setIsLoading] = useState(false);
     const [cart, setCart] = useState([]);
     const [totalAmount, setTotalAmount] = useState(0);
     const [vatAmount, setTotalVat] = useState(0);
-    
+
   const [grandTotal, setGrandTotal] = useState(0);
   const [options,setOptions] =useState('');
   const [selectTable,setSelectTable] =useState();
@@ -71,8 +71,8 @@ const Pos =() =>{
 
 
     useEffect(() => {
-     
-      axios.get('http://localhost:5000/api/pos/posfood')
+
+      axios.get(`${apiConfig.baseURL}/api/pos/posfood`)
       .then((response) => {
         setFoodcategory(response.data);
       })
@@ -96,7 +96,7 @@ const Pos =() =>{
     customeremail:'',
     customermobile:'',
     customeraddress:''
-   
+
 
 })
 
@@ -105,7 +105,7 @@ const handleSubmit =(event) =>{
     event.preventDefault();
     const validationErrors = validateForm(values);
     if (Object.keys(validationErrors).length === 0) {
-    axios.post('http://localhost:5000/api/customer/createCustomer',values)
+    axios.post(`${apiConfig.baseURL}/api/customer/createCustomer`,values)
     .then(res =>{
 
         console.log(res);
@@ -139,15 +139,15 @@ const validateForm = (data) => {
     errors.customermobile = "Enter Number Only";
   }
 
- 
+
   return errors;
 };
 
 
 
   useEffect(() => {
-   
-    axios.get('http://localhost:5000/api/pos/posWaiter')
+
+    axios.get(`${apiConfig.baseURL}/api/pos/posWaiter`)
     .then((response) => {
         setWaiter(response.data);
     })
@@ -158,13 +158,13 @@ const validateForm = (data) => {
 const handleWaiter = (event) => {
 
     setWaiters(event.target.value);
-  
+
    }
-   
+
 
 useEffect(() => {
-   
-    axios.get('http://localhost:5000/api/pos/posCustomer')
+
+    axios.get(`${apiConfig.baseURL}/api/pos/posCustomer`)
     .then((response) => {
         setCustomer(response.data);
     })
@@ -180,8 +180,8 @@ const handleCustomer=(event)=>
 
 
 useEffect(() => {
-   
-    axios.get('http://localhost:5000/api/pos/posTable')
+
+    axios.get(`${apiConfig.baseURL}/api/pos/posTable`)
     .then((response) => {
         setTable(response.data);
     })
@@ -191,8 +191,8 @@ useEffect(() => {
 }, []);
 const [modaltable, setModalTable] = useState([]);
 useEffect(() => {
-   
-  axios.get('http://localhost:5000/api/pos/posTable')
+
+  axios.get(`${apiConfig.baseURL}/api/pos/posTable`)
   .then((response) => {
       setModalTable(response.data);
   })
@@ -215,7 +215,7 @@ useEffect(() => {
     setSelectTable('');
     setShowTable(false);
   }
- 
+
   const addProductToCart = async(menu) =>{
 
     let findProductInCart = cart.find(i=>{
@@ -233,8 +233,8 @@ useEffect(() => {
             quantity: cartItem.quantity + 1,
             // totalAmount: cartItem.salesprice * (cartItem.quantity + 1),
            // vatAmount:(cartItem.salesprice * (cartItem.quantity + 1) * cartItem.vat.percentage) / 100,
-         
-         
+
+
           }
           //console.log(vatAmount);
           newCart.push(newItem);
@@ -270,7 +270,7 @@ useEffect(() => {
         closeOnClick: true, // Close the toast when clicked
         pauseOnHover: true, // Pause on hover
       };
-    
+
       //toast(`Added ${newItem.foodmenuname} to the cart`, toastOptions);
       <ToastContainer />
     }
@@ -301,7 +301,7 @@ useEffect(() => {
   useEffect(() => {
     let newTotalAmount = 0;
     let newVatAmount = 0;
-   
+
     cart.forEach(icart => {
 
       newTotalAmount = newTotalAmount + icart.quantity * parseInt(icart.totalAmount);
@@ -314,16 +314,16 @@ useEffect(() => {
     setGrandTotal((newTotalAmount+newVatAmount).toFixed())
   },[cart])
 
-  
+
   // useEffect(() => {
- 
-  
+
+
   //   let newVatAmount =0;
   //   cart.forEach(icart => {
-    
+
   //     newVatAmount = newVatAmount + parseInt(icart.vatAmount);
   //   })
-  
+
   //   setTotalVat(newVatAmount)
   // },[cart])
 
@@ -331,7 +331,7 @@ useEffect(() => {
     e.preventDefault();
    console.log(placeOrder);
 
-    
+
   }
 
   const handleIncrement = (prod) => {
@@ -401,7 +401,7 @@ const handlePlaceorder =(event) =>{
 
 
 
-  // 
+  //
     if(!waiters && !customers) {
     alert("please select waiters and customers")
     } else if(!waiters){
@@ -412,14 +412,14 @@ const handlePlaceorder =(event) =>{
 
 
       setPlaceOrder({
-        selectTable, 
-        customers, 
-        waiters, 
-        cart, 
-        options, 
-        totalAmount, 
-        grandTotal, 
-        vatAmount 
+        selectTable,
+        customers,
+        waiters,
+        cart,
+        options,
+        totalAmount,
+        grandTotal,
+        vatAmount
       })
  console.log({selectTable, customers, waiters, cart, options, totalAmount, grandTotal, vatAmount });
 
@@ -433,7 +433,7 @@ const handlePlaceorder =(event) =>{
 
 
       var posData = new FormData();
-     
+
      posData.append("customers",customers);
      posData.append("options",options);
      posData.append("grandTotal",grandTotal);
@@ -451,8 +451,8 @@ const handlePlaceorder =(event) =>{
         `cart[${i}].quantity`,
         cart[i].quantity
       );
-    
-   
+
+
     }
 
 
@@ -462,8 +462,8 @@ const handlePlaceorder =(event) =>{
     //     selectTable[i]._id
     //   );
 
-    
-   
+
+
     // }
 
 
@@ -475,18 +475,18 @@ const handlePlaceorder =(event) =>{
     posData.append("foodoption",options);
     posData.append("tableId",selectTable._id);
     posData.append("waiterId",waiters);
- 
-    
-    
-  
+
+
+
+
       const config = {
         headers: {
           'Content-Type': 'application/json',
         }
       };
-  
+
        axios
-      .post('http://localhost:5000/api/pos/createpos', posData, config)
+      .post(`${apiConfig.baseURL}/api/pos/createpos`, posData, config)
        .then(res => {
           console.log(res);
           navigate('/posorder');
@@ -496,18 +496,18 @@ const handlePlaceorder =(event) =>{
     }
     //console.info({selectTable, customers, waiters, cart, options, totalAmount, grandTotal, vatAmount })
 
-  } 
+  }
   else {
    // console.log({selectTable, customers, waiters, cart, options, totalAmount, grandTotal, vatAmount });
     setPlaceOrder({
-      selectTable, 
-      customers, 
-      waiters, 
-      cart, 
-      options, 
-      totalAmount, 
-      grandTotal, 
-      vatAmount 
+      selectTable,
+      customers,
+      waiters,
+      cart,
+      options,
+      totalAmount,
+      grandTotal,
+      vatAmount
     })
 
     var posData = new FormData();
@@ -515,7 +515,7 @@ const handlePlaceorder =(event) =>{
     posData.append("customers",customers);
     posData.append("options",options);
 
-   
+
     posData.append("grandTotal",grandTotal);
 
     for (let i = 0; i < cart.length; i++) {
@@ -531,8 +531,8 @@ const handlePlaceorder =(event) =>{
        `cart[${i}].quantity`,
        cart[i].quantity
      );
-   
-  
+
+
    }
 
 
@@ -543,23 +543,23 @@ const handlePlaceorder =(event) =>{
    //posData.append("tableId",null);
    posData.append("waiterId",waiters);
 
-   
-   
- 
+
+
+
      const config = {
        headers: {
          'Content-Type': 'application/json',
        }
      };
- 
+
       axios
-     .post('http://localhost:5000/api/pos/createpos', posData, config)
+     .post(`${apiConfig.baseURL}/api/pos/createpos`, posData, config)
       .then(res => {
          console.log(res);
          navigate('/posorder');
        })
        .catch(err => console.log(err));
-  
+
 
 
     //api call
@@ -573,19 +573,19 @@ const handleDineinSubmit= () =>{
       setShowTable(false);
       setShowDineinOptions(false);
     }
-    
+
 
 }
 
 
     return (
         <div className="container-fluid">
-          
+
            <div className="col-12 main-content">
           <div className="tbl-h">
           <ul className="nav nav-tabs nav-justified" role="tablist">
           <li className="nav-item">
-                
+
                   <Link to="/dashboard" className="nav-link " data-toggle="tab"   aria-selected="true">Dashboard</Link>
               </li>
               <li className="nav-item">
@@ -600,10 +600,10 @@ const handleDineinSubmit= () =>{
               <li className="nav-item">
                   <a className="nav-link" data-toggle="tab" href="#todayorder" role="tab" aria-controls="kiwi2" aria-selected="false">Today Order</a>
               </li>
-             
-           
+
+
           </ul>
-      </div> 
+      </div>
                 </div>
                 <form onSubmit={handleSubmitPos}>
         <div className="row">
@@ -635,11 +635,11 @@ const handleDineinSubmit= () =>{
         </div> */}
         <div class="tab-scroller" >
    <i class="tab-scroller-arrow left-arrow d-none ">
-   
- 
+
+
    </i>
    <i class="tab-scroller-arrow right-arrow d-none">
-   
+
    </i>
    <ul class="nav nav-pills" id="pills-tab" role="tablist">
       <li class="nav-item" role="presentation">
@@ -665,13 +665,13 @@ const handleDineinSubmit= () =>{
 </div>
                     <div className="tbl-h">
                     <ul className="nav nav-pills flex-columns shdw-lft " id="myTab" role="tablist">
-                            
-                              
+
+
                         {distinctCategories.map((category, index) => (
 
-                           
+
                                 <li className="nav-item">
-                                
+
           <a
             key={index}
             className={`nav-item nav-link ${index === activeTab ? 'active' : ''}`}
@@ -682,22 +682,22 @@ const handleDineinSubmit= () =>{
                               </li>
                               ))}
 
-                           
 
-                      
-                             
-                              </ul>  
-                            </div>  
-       
+
+
+
+                              </ul>
+                            </div>
+
         <div className="tab-content p-3" id="myTabContent">
-        {isLoading ? 'Loading' :<div className="row">  
+        {isLoading ? 'Loading' :<div className="row">
         {foodCategory.length > 0 &&
             foodCategory
               .filter(item => item.foodcategory.foodcategoryname === distinctCategories[activeTab])
               .map((menu, index) => (
                 <div className="col-sm-3 col-sm-3" key={index}>
                   <div className="menu-box" onClick={() => addProductToCart(menu)}>
-                    
+
                     <div className="menu-div">
                     {/* <img src={`/uploads/${menu.photo}`} className=" foodimg" /> */}
                       <h6 className="mt-2">{menu.foodmenuname}</h6>
@@ -707,9 +707,9 @@ const handleDineinSubmit= () =>{
                 </div>
               ))}
  </div> }
-        </div> 
-                            
-                           
+        </div>
+
+
                     </div>
                     <div className="col-md-5">
                             <div className="wraper shdw">
@@ -757,7 +757,7 @@ const handleDineinSubmit= () =>{
 </div>
 
     </div>
-         
+
          <div className="table-responsive vh-70">
              <table className="table">
                  <thead>
@@ -766,7 +766,7 @@ const handleDineinSubmit= () =>{
                      <th scope="col">Name</th>
                      <th scope="col">U.Price</th>
                      <th scope="col">Qty</th>
-                       
+
                      <th scope="col" className="text-right">Total</th>
                      <th>Action</th>
                    </tr>
@@ -778,7 +778,7 @@ const handleDineinSubmit= () =>{
                       <td>{cartProduct.foodmenuname}</td>
                       <td>{cartProduct.salesprice}</td>
                       <td><button className='btn btn-danger btn-sm cartminus' onClick={()=>handleDecrement(cartProduct)}>-</button><input type="text" style={{ width: '20px' }} value={cartProduct.quantity} /><button className='btn btn-success btn-sm cartplus' onClick={()=>handleIncrement(cartProduct)}>+</button></td>
-                    
+
                       <td>{cartProduct.totalAmount}</td>
                       <td>
                         <button className='btn btn-danger btn-sm' onClick={() => removeProduct(cartProduct)}>x</button>
@@ -787,44 +787,44 @@ const handleDineinSubmit= () =>{
                     </tr>)
 
                     : 'No Item in Cart'}
-                 
-                  
+
+
                  </tbody>
                </table>
          </div>
 
          <div className="table-responsive">
              <table className="table">
-                   <tr>                               
-                     <td>Total </td>                                
+                   <tr>
+                     <td>Total </td>
                      <th className="text-right">${totalAmount}</th>
                    </tr>
-                   <tr>                               
-                     <td >Discount  </td>                                
+                   <tr>
+                     <td >Discount  </td>
                      <th className="text-right"></th>
                    </tr>
-                   <tr>                               
-                     <td>VAT </td>                                
+                   <tr>
+                     <td>VAT </td>
                      <th className="text-right">${vatAmount}</th>
                    </tr>
-                   <tr>                               
-                     <th>Grand Total   </th>                                
+                   <tr>
+                     <th>Grand Total   </th>
                      <th className="text-right">{grandTotal}</th>
                    </tr>
-                   <tr>                               
+                   <tr>
                      <td>
-                        
+
                          <div className="custom-control custom-radio custom-control-inline">
                            <input type="radio" className="custom-control-input" id="defaultInline1" name="inlineDefaultRadiosExample" />
                            <label className="custom-control-label" htmlFor="defaultInline1">Cash</label>
                          </div>
-                         
-                       
+
+
                          <div className="custom-control custom-radio custom-control-inline">
                            <input type="radio" className="custom-control-input" id="defaultInline2" name="inlineDefaultRadiosExample" />
                            <label className="custom-control-label" htmlFor="defaultInline2">Card</label>
-                         </div> 
-                     </td>                                
+                         </div>
+                     </td>
                      <th ></th>
                    </tr>
                </table>
@@ -835,22 +835,22 @@ const handleDineinSubmit= () =>{
              <div className="col-lg-6 pl-0"><button type="button" onClick={handlePlaceorder} className="btn btn-warning w-100 mb-2 p-2">Place Order</button></div>
              <div className="col-lg-6"><button type="button" className="btn btn-danger w-100 mb-2 p-2">Hold</button></div>
              <div className="col-lg-6 pl-0"><button type="button" className="btn btn-success w-100 mb-2 p-2">Quick Pay</button></div>
-         </div>                                      
+         </div>
      </div>
                             </div>
 
                 </div>
             </div>
 
-            
+
             <div className="tab-pane" id="delivery" role="tabpanel" aria-labelledby="chicken-tab">
                  <PosRunningOrder />
               </div>
               <div className="tab-pane" id="pickup" role="tabpanel" aria-labelledby="kiwi-tab">
-                  333333333333333           
+                  333333333333333
               </div>
-           
-            
+
+
             </div>
 
         </div>
@@ -879,18 +879,18 @@ const handleDineinSubmit= () =>{
             </div>
             <div className="modal-body">
             <div className="row">
-       
-      
-           
+
+
+
              <form className="forms-sample" onSubmit={handleSubmit} >
                  <div className="row">
-                   
+
                      <div className="form-group row">
                  <label htmlFor="exampleInputUsername2" className="col-sm-4 col-form-label">Customer Name</label>
                  <div className="col-sm-8">
                  <input type="text" className="form-control" name="customername" id="exampleInputUsername2" onChange={e =>setValues({...values, customername: e.target.value})} placeholder="Customer Name" />
                           {errors.customername && <span className="error">{errors.customername}</span>}
-                   
+
                  </div>
                </div>
 
@@ -899,7 +899,7 @@ const handleDineinSubmit= () =>{
                  <div className="col-sm-8">
                  <input type="text" className="form-control" name="customeremail" id="exampleInputUsername2" onChange={e =>setValues({...values, customeremail: e.target.value})} placeholder="Customer Email" />
                           {errors.customeremail && <span className="error">{errors.customeremail}</span>}
-                  
+
                  </div>
                </div>
                <div className="form-group row">
@@ -907,7 +907,7 @@ const handleDineinSubmit= () =>{
                  <div className="col-sm-8">
                  <input type="text" className="form-control" name="customermobile" id="exampleInputUsername2" onChange={e =>setValues({...values, customermobile: e.target.value})} placeholder="Customer Mobile" />
                           {errors.customermobile && <span className="error">{errors.customermobile}</span>}
-                   
+
                  </div>
                </div>
                <div className="form-group row">
@@ -916,12 +916,12 @@ const handleDineinSubmit= () =>{
                  <textarea className='form-control' name='customeraddress' onChange={e =>setValues({...values, customeraddress: e.target.value})}></textarea>
                  </div>
                </div>
-               
-             
-                    
-               
+
+
+
+
                  </div>
-            
+
                  <div className="modal-footer">
               <button
                 type="button"
@@ -933,16 +933,16 @@ const handleDineinSubmit= () =>{
               </button>
               <button type="submit" className="btn btn-gradient-primary me-2">Submit</button>
             </div>
-              
+
              </form>
-           
+
 
 
 
 
      </div>
             </div>
-           
+
           </div>
         </div>
       </div>
@@ -951,7 +951,7 @@ const handleDineinSubmit= () =>{
         style={{ display: showModal ? 'block' : 'none' }}
       ></div>
 
-      
+
       {/* Table */}
              {/* Table */}
              <div
@@ -976,10 +976,10 @@ const handleDineinSubmit= () =>{
             </div>
             <div className="modal-body">
             <div className="row">
-       
+
             {
                   modaltable.map((tables, index) =>(
-               
+
                 <div className="col-md-3">
                      <div className="card" onClick={(e)=>{
                       setSelectTable(tables)
@@ -995,8 +995,8 @@ const handleDineinSubmit= () =>{
                 </div>
                   ))
             }
-           
-       
+
+
 
 
 
@@ -1014,17 +1014,17 @@ const handleDineinSubmit= () =>{
               </button>
               <button type="submit" onClick={handleDineinSubmit} className="btn btn-gradient-primary me-2">Submit</button>
             </div>
-           
+
           </div>
         </div>
       </div>
       <div
         className={`modal-backdrop fade ${showTable ? 'show' : ''}`}
         style={{ display: showTable ? 'block' : 'none' }}
-      ></div>      
+      ></div>
 
         </div>
-      
+
     )
 
 

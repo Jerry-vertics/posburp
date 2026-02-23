@@ -6,20 +6,21 @@ import Footer from '../layouts/Footer';
 import Select from 'react-select';
 
 import axios from "axios";
+import apiConfig from '../layouts/base_url';
 import { redirect, useNavigate } from "react-router-dom";
 
 
 const AddFoodMenu =() =>{
 
-    
-    
+
+
 
 //Fetch from food Category
 const [foodCategory, setFoodcategory] = useState([]);
 
   useEffect(() => {
-   
-    axios.get('http://localhost:5000/api/foodmenu/foodcategory')
+
+    axios.get(`${apiConfig.baseURL}/api/foodmenu/foodcategory`)
     .then((response) => {
       setFoodcategory(response.data);
     })
@@ -28,7 +29,7 @@ const [foodCategory, setFoodcategory] = useState([]);
     });
 }, []);
   //     .then(response => {
-      
+
   //       const data = response.data.map(item => ({
   //         value: item._id,
   //         label: item.foodcategoryname
@@ -40,15 +41,15 @@ const [foodCategory, setFoodcategory] = useState([]);
   //     });
   // }, []);
 
- 
+
 //fetch Ingredients
   const [units, setOptions] = useState([]);
- 
- 
+
+
 
 useEffect(() => {
     // Fetch data from your API here
-    axios.get('http://localhost:5000/api/foodmenu/ingredients')
+    axios.get(`${apiConfig.baseURL}/api/foodmenu/ingredients`)
       .then(response => {
         // Assuming your API response is an array of objects with 'value' and 'label' properties
         const data = response.data.map(item => ({
@@ -72,9 +73,9 @@ useEffect(() => {
   //Fetch Vat
 
   const [vat,selectVat] = useState([]);
-  
+
   useEffect(() =>{
-    axios.get('http://localhost:5000/api/foodmenu/vat')
+    axios.get(`${apiConfig.baseURL}/api/foodmenu/vat`)
     .then((response) => {
       selectVat(response.data);
     })
@@ -112,15 +113,15 @@ useEffect(() => {
   const Beverage  = [
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
-   
+
   ];
   const navigate = useNavigate();
   const handleSubmit =(event) =>{
     event.preventDefault();
 
-   
 
-    axios.post('http://localhost:5000/api/foodmenu/creatfoodmenu', {
+
+    axios.post(`${apiConfig.baseURL}/api/foodmenu/creatfoodmenu`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({foodmenuname,foodingredientId: selectedValues.map(units => units.value) })
@@ -130,9 +131,9 @@ useEffect(() => {
         navigate('/viewfoodmenu');
       })
       .catch(err => console.log(err));
-   
-   
-  
+
+
+
 
 
   }
@@ -150,7 +151,7 @@ useEffect(() => {
                   <div className="card-body">
                     <h4 className="card-title">Food Menu List</h4>
                     <div className="d-flex justify-content-end">
-                   
+
                 </div>
                   <form onSubmit={handleSubmit}>
                   <div className="form-group row">
@@ -184,24 +185,24 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      
+
                       <div className="form-group row">
                         <label htmlFor="exampleInputUsername2" className="col-sm-3 col-form-label">Food ingredient</label>
                         <div className="col-sm-9">
-                       
+
                       <Select
       options={units}
       isMulti={true} // Enable multi-select
       value={selectedValues}
       onChange={selectedOptions => setSelectedValues(selectedOptions)}
-      
+
     />
 
-                       
-                        
+
+
                         </div>
                       </div>
-                      
+
                       <div className="form-group row">
                         <label htmlFor="exampleInputUsername2" className="col-sm-3 col-form-label">Sales Price</label>
                         <div className="col-sm-9">
@@ -229,7 +230,7 @@ useEffect(() => {
                           <input type="text" className="form-control" onChange={(e) => {setDescription(e.target.value)}} name="foodmenuname" id="exampleInputUsername2"  placeholder="Food Menu" />
                         </div>
                       </div>
-{/* 
+{/*
                       <div className="form-group row">
                         <label htmlFor="exampleInputUsername2" className="col-sm-3 col-form-label">Is it Veg Item ?</label>
                         <div className="col-sm-9">
@@ -271,7 +272,7 @@ useEffect(() => {
                       <button type="submit" className="btn btn-gradient-primary me-2">Submit</button>
 
                   </form>
-                  
+
                   </div>
                 </div>
               </div>

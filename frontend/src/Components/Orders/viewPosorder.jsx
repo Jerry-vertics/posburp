@@ -12,12 +12,7 @@ const ViewPosOrder =() =>{
 
   const [posfood, setPosFood] = useState([]);
 
-  // useEffect(() => {
-  //   fetch('http://localhost:5000/api/pos/getPos')
-  //     .then((response) => response.json())
-  //     .then((data) => setPosFood(data))
-  //     .catch((error) => console.error(error));
-  // }, []);
+  
 
   useEffect(() => {
     axios
@@ -53,21 +48,21 @@ const ViewPosOrder =() =>{
                     <div className="d-flex justify-content-end">
                     <Link to="/pos" className="btn btn-success">Pos +</Link>
                 </div>
-                  
+
                 <table className="table table-hover  bordered-table" id="example_table" style={{ width: '100%' }}>
                       <thead>
                         <tr>
                           <th>Order Number</th>
                             <th>Order Option</th>
-                       
+
                           <th>Table Name</th>
                         <th>Waiter Name</th>
                      <th>Date and Time</th>
                       <th>Subtotal</th>
                       <th>Vat</th>
                       <th>Grand Total</th>
-                      
-                      
+
+
                         </tr>
                       </thead>
                       <tbody>
@@ -91,7 +86,7 @@ const formattedTime = dateObject.toLocaleTimeString();
       <td>{order.ordernumber}</td>
       <td>{order.options}</td>
 
-     
+
       <td>{order.tableDetails ? order.tableDetails.tablename : 'N/A'}</td>
       <td>
   {order.waiterDetails ? `${order.waiterDetails.firstname} ${order.waiterDetails.lastname}` : 'N/A'}
@@ -101,8 +96,8 @@ const formattedTime = dateObject.toLocaleTimeString();
       <td>{vatamounts}</td>
       <td>{order.grandTotal}</td>
 
-    
-    </tr> 
+
+    </tr>
     );
 })}
 </tbody>
