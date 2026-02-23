@@ -205,6 +205,21 @@ const completePaymeny = asyncHandler(async(req, res) => {
           preserveNullAndEmptyArrays: true
         },
       },
+       {
+        $lookup: {
+          from: 'ordertables', // Join with ordertable collection
+          localField: '_id',
+          foreignField: 'orderId',
+          as: 'orderTable'
+        }
+      },
+      {
+        $unwind: {
+          path: "$orderTable",
+          preserveNullAndEmptyArrays: true // Keep orders even if no orderTable entry
+        }
+      },
+
       {
         $lookup: {
           from: "delivery",
@@ -241,7 +256,9 @@ const completePaymeny = asyncHandler(async(req, res) => {
           customerDetails: { $first: "$customerDetails" },
           waiterDetails: { $first: "$waiterDetails" },
           deliveryDetails: { $first: "$deliveryDetails" },
-          tableDetails: { $first: "$tableDetails" }  // Added this line
+          tableDetails: { $first: "$tableDetails" },
+           orderTable: { $first: "$orderTable" }
+           // Added this line
         }
       },
     ]);

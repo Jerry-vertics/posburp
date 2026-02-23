@@ -47,6 +47,7 @@ const PosRunningOrder = ()=>{
         .then((response) => response.json())
         .then((data) => setPosRunningorder(data))
         .catch((error) => console.error(error));
+
     }, [refresh]);
 
     const filteredOrders = posRunningorder.filter((order) => {

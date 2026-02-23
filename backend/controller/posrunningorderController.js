@@ -22,7 +22,7 @@ const runningOrder =asyncHandler(async(req,res) =>{
             paymentstatus: "notpaid"
           }
         },
-  
+
         {
           $lookup: {
             from: 'tables',
@@ -38,6 +38,7 @@ const runningOrder =asyncHandler(async(req,res) =>{
             preserveNullAndEmptyArrays: true // Keep customerDetails even if it's null
           }
         },
+
         {
           $lookup: {
             from: 'users',
@@ -49,19 +50,19 @@ const runningOrder =asyncHandler(async(req,res) =>{
         {
           $unwind: '$waiter',
         },
-        
-  
+
+
       ]);
       res.json(runningorder);
       // Use Mongoose to find orders where paymentstatus is "notpaid"
      // const notPaidOrders = await Pos.find({ paymentstatus: 'notpaid' });
-  
+
      // res.json(notPaidOrders);
     } catch (error) {
       console.error('Error fetching "notpaid" orders:', error);
-    
+
     }
-  
+
   })
 
 
@@ -167,13 +168,13 @@ const runningOrder =asyncHandler(async(req,res) =>{
             }
           },
           customerDetails: { $first: "$customerDetails" },
-  
+
           waiterDetails: { $first: "$waiterDetails" },
           deliveryDetails :{ $first : "$deliveryDetails" }
         }
       },
     ]);
-  
+
     res.json(pos);
   } catch (error) {
     console.error(error);
@@ -188,7 +189,7 @@ const runningOrder =asyncHandler(async(req,res) =>{
 const getedit =asyncHandler(async(req,res) =>{
 
     const { id } = req.params;
-  
+
     try {
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ error: 'Invalid ObjectId' });
@@ -196,11 +197,11 @@ const getedit =asyncHandler(async(req,res) =>{
       const pos = await Pos.aggregate([
         {
           $match: {
-            _id: new mongoose.Types.ObjectId(id), 
+            _id: new mongoose.Types.ObjectId(id),
           },
         },
         {
-          $unwind: "$cart" 
+          $unwind: "$cart"
         },
         {
           $lookup: {
@@ -211,7 +212,7 @@ const getedit =asyncHandler(async(req,res) =>{
           },
         },
         {
-          $unwind: "$menuItemDetails" 
+          $unwind: "$menuItemDetails"
         },
         {
           $lookup: {
@@ -224,7 +225,7 @@ const getedit =asyncHandler(async(req,res) =>{
         {
           $unwind: {
             path: "$customerDetails",
-            preserveNullAndEmptyArrays: true 
+            preserveNullAndEmptyArrays: true
           },
         },
         {
@@ -250,7 +251,7 @@ const getedit =asyncHandler(async(req,res) =>{
           // $unwind: "$tableDetails"
           $unwind: {
             path: "$tableDetails",
-            preserveNullAndEmptyArrays: true 
+            preserveNullAndEmptyArrays: true
           },
         },
         {
@@ -287,21 +288,21 @@ const getedit =asyncHandler(async(req,res) =>{
               }
             },
             customerDetails: { $first: "$customerDetails" },
-    
+
             waiterDetails: { $first: "$waiterDetails" },
             deliveryDetails :{ $first : "$deliveryDetails" }
           }
         },
       ]);
-    
+
       res.json(pos);
     } catch (error) {
       console.error(error);
       throw new Error(error);
     }
-  
-  
-  
+
+
+
   });
 
 
@@ -406,13 +407,13 @@ const getedit =asyncHandler(async(req,res) =>{
             }
           },
           customerDetails: { $first: "$customerDetails" },
-  
+
           waiterDetails: { $first: "$waiterDetails" },
           deliveryDetails :{ $first : "$deliveryDetails" }
         }
       },
     ]);
-  
+
     res.json(pos);
   } catch (error) {
     console.error(error);
@@ -425,13 +426,13 @@ const getedit =asyncHandler(async(req,res) =>{
 
 const getMerge =asyncHandler(async(req,res) =>{
     const selectedIds = req.body.ids;
-  
+
     // console.log(selectedIds);
-  
+
     try {
-     
+
       const responseData = await Pos.find({ _id: { $in: selectedIds } });
-  
+
       // Respond with the result
       res.json(responseData);
       // console.log(responseData);
@@ -464,7 +465,7 @@ const getMerge =asyncHandler(async(req,res) =>{
 
             const foodqty = existingItem.quantity - updatedQuantity
 
-          
+
 
             const parsedUpdatedQuantity = parseInt(foodqty);
             updates.push({
@@ -475,15 +476,15 @@ const getMerge =asyncHandler(async(req,res) =>{
                 });
 
                 foodtotal += updatedQuantity * updateSales;
-          
+
         }
 
 });
  if (updates.length > 0) {
-      
+
         await Pos.bulkWrite(updates);
     }
-    const sequence = await Splitorder.findOne({}).sort("-splitnumber"); 
+    const sequence = await Splitorder.findOne({}).sort("-splitnumber");
     let nextIdNumber = "SPI10001";
     if (sequence && sequence.splitnumber) {
       const lastIdNumber = sequence.splitnumber;
@@ -545,7 +546,7 @@ const getMerge =asyncHandler(async(req,res) =>{
     await newEntry.save();
 
 
-   
+
     res.json({ success: true, message: "Quantities updated successfully" });
 });
 
@@ -554,9 +555,9 @@ const getMerge =asyncHandler(async(req,res) =>{
 
 
 
-   
 
- 
+
+
 
 
 

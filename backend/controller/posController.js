@@ -278,7 +278,7 @@ const updatePayment = asyncHandler(async (req, res) => {
       {
         $set: {
           billnumber: nextIdNumber,
-          
+
         },
       }
     );
@@ -574,7 +574,7 @@ const insertQuickpay = asyncHandler(async (req, res) => {
       amount: grandTotal,
       transtype: transtype,
       transtatus:transtatus,
-      
+
     });
     await newTransaction.save();
 
@@ -849,19 +849,46 @@ const getorders =asyncHandler(async(req,res) =>{
             }
           },
           customerDetails: { $first: "$customerDetails" },
-  
+
           waiterDetails: { $first: "$waiterDetails" },
           deliveryDetails :{ $first : "$deliveryDetails" }
         }
       },
     ]);
-  
+
     res.json(pos);
   } catch (error) {
     console.error(error);
     throw new Error(error);
   }
 })
+
+
+const updateTable = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let orderstatus = "Complete";
+
+    const updateorderTable = await OrderTable.updateOne(
+      { orderId: id },
+      {
+        $set: {
+          orderstatus: orderstatus,
+        },
+      }
+    );
+
+    if (updateorderTable.nModified === 0) {
+      return res.status(404).json({ error: "No matching order found" });
+    }
+
+    res.json({ message: "Order table updated successfully", orderstatus });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 
 module.exports = {
@@ -879,6 +906,7 @@ module.exports = {
   insertQuickpay,
   tableorder,
   calculateTable,
-  getorders
+  getorders,
+  updateTable
 };
 

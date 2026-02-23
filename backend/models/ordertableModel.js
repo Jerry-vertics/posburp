@@ -5,7 +5,7 @@ var ordertableSchema = new mongoose.Schema({
     ordertableId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Table'
-      
+
     },
     ordernumber:{
         type:String,
@@ -19,7 +19,7 @@ var ordertableSchema = new mongoose.Schema({
 
     date: { type: Date, default: Date.now },
 
- 
+
 });
 
 //Export the model
