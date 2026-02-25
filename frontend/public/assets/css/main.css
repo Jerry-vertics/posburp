@@ -1528,3 +1528,9 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
   width: 75%;
   padding-top: 6px;
 }
+
+.foodiconimg
+{
+  width: 32px;
+  padding-bottom: 4px;
+}
