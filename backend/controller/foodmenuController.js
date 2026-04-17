@@ -6,7 +6,7 @@ const vat =require('../models/vatModel');
 const { default: mongoose } = require("mongoose");
 const CsvParser =require('json2csv').Parser;
 var csv =require('csvtojson');
-
+const fs = require('fs');
 
 const Schema = mongoose.Schema;
 const itemSchema = new Schema({ data: String });
@@ -297,58 +297,136 @@ const exportfoodmenu = asyncHandler(async (req, res) => {
 
 const importFoodmenu = asyncHandler(async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ status: 400, message: 'No file uploaded' });
+    }
+
     const existingFoodNames = new Set();
     const importedFoodmenu = [];
     const duplicateFoodmenu = [];
 
-    csv()
-      .fromFile(req.file.path)
-      .then(async (response) => {
-        for (var x = 0; x < response.length; x++) {
-          const foodName = response[x].foodmenuname;
+    // Use promise wrapper for CSV parsing
+    const parseCSV = () => {
+      return new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(req.file.path) // This requires 'fs'
+          .pipe(csv())
+          .on('data', (data) => results.push(data))
+          .on('end', () => resolve(results))
+          .on('error', (error) => reject(error));
+      });
+    };
 
-          // Check if the food name already exists
-          if (existingFoodNames.has(foodName)) {
-            // Handle duplicate entry (skip or log an error)
-            // console.log(`Duplicate entry found for food name: ${foodName}`);
-            duplicateFoodmenu.push({ foodmenuname: foodName, reason: 'Duplicate entry' });
-            continue;
+    const response = await parseCSV();
+
+    for (var x = 0; x < response.length; x++) {
+      const foodName = response[x].foodmenuname;
+
+      // Skip empty food names
+      if (!foodName || foodName.trim() === '') {
+        duplicateFoodmenu.push({ foodmenuname: 'Empty name', reason: 'Food name is empty' });
+        continue;
+      }
+
+      // Check if the food name already exists in current batch
+      if (existingFoodNames.has(foodName)) {
+        duplicateFoodmenu.push({ foodmenuname: foodName, reason: 'Duplicate entry in file' });
+        continue;
+      }
+
+      existingFoodNames.add(foodName);
+
+      const existingFood = await Foodmenu.findOne({
+        foodmenuname: { $regex: new RegExp(`^${foodName}$`, 'i') },
+      });
+
+      if (!existingFood) {
+        try {
+          // Parse foodingredientId safely
+          let foodingredientId = [];
+          try {
+            const ingredientStr = response[x].foodingredientId || '';
+            if (ingredientStr && ingredientStr !== '[]' && ingredientStr !== '[""[{}]""]') {
+              // Clean up the string
+              let cleanStr = ingredientStr;
+              // Extract IDs using regex for MongoDB ObjectIds
+              const idMatches = cleanStr.match(/[a-f0-9]{24}/g);
+              if (idMatches && idMatches.length > 0) {
+                foodingredientId = idMatches;
+              } else {
+                try {
+                  const parsed = JSON.parse(cleanStr);
+                  if (Array.isArray(parsed)) {
+                    foodingredientId = parsed;
+                  }
+                } catch (e) {
+                  console.log('Parse error:', e);
+                }
+              }
+            }
+          } catch (parseError) {
+            console.log(`Error parsing ingredients for ${foodName}:`, parseError);
+            foodingredientId = [];
           }
 
-          existingFoodNames.add(foodName);
-
-          const existingFood = await Foodmenu.findOne({
+          const newFood = new Foodmenu({
             foodmenuname: foodName,
+            foodcategoryId: response[x].foodcategoryId || null,
+            foodingredientId: foodingredientId,
+            salesprice: parseFloat(response[x].salesprice) || 0,
+            vatId: response[x].vatId || null,
+            description: response[x].description || '',
+            vegitem: response[x].vegitem === 'yes' ? 'yes' : 'no',
+            beverage: response[x].beverage === 'yes' ? 'yes' : 'no',
+            bar: response[x].bar === 'yes' ? 'yes' : 'no',
+            photo: response[x].photo || '',
           });
 
-          if (!existingFood) {
-            // Food not found, insert into the database
-            const foodingredientId = JSON.parse(response[x].foodingredientId);
-            const newFood = new Foodmenu({
-              foodmenuname: foodName,
-              foodcategoryId: response[x].foodcategoryId,
-              foodingredientId: foodingredientId,
-              salesprice: response[x].salesprice,
-              vatId: response[x].vatId,
-              description: response[x].description,
-              vegitem: response[x].vegitem,
-              beverage: response[x].beverage,
-              bar: response[x].bar,
-              photo: response[x].photo,
-            });
-
-            const savedFood = await newFood.save();
-            importedFoodmenu.push(savedFood);
-          }
+          const savedFood = await newFood.save();
+          importedFoodmenu.push(savedFood);
+        } catch (saveError) {
+          console.error(`Error saving food ${foodName}:`, saveError);
+          duplicateFoodmenu.push({
+            foodmenuname: foodName,
+            reason: saveError.message
+          });
         }
+      } else {
+        duplicateFoodmenu.push({
+          foodmenuname: foodName,
+          reason: 'Already exists in database'
+        });
+      }
+    }
 
-        res.json(importedFoodmenu);
-      });
+    // Clean up the uploaded file
+    if (req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    // Send response with both arrays
+    res.json({
+      status: 200,
+      importedCount: importedFoodmenu.length,
+      duplicateCount: duplicateFoodmenu.length,
+      importedFoodmenu: importedFoodmenu,
+      duplicateFoodmenu: duplicateFoodmenu,
+      message: `Successfully imported ${importedFoodmenu.length} items. ${duplicateFoodmenu.length} duplicates found.`
+    });
+
   } catch (error) {
-    res.status(401).json({ status: 401, error });
+    console.error('Import error:', error);
+    // Clean up file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting file:', unlinkError);
+      }
+    }
+    res.status(500).json({ status: 500, error: error.message });
   }
 });
-
 
 const updateFoodMenuStatus = async (req, res) => {
   try {

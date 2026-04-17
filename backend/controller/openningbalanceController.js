@@ -4,13 +4,46 @@ const Transaction =require('../models/acctransactionModel');
 const User =require('../models/userModel');
 
 const createBalance = asyncHandler(async (req, res) => {
-  const { amount,addedby,shiftstoken } = req.body;
+  const { amount, addedby, shiftstoken } = req.body;
+
+  // Validate required fields
+  if (!amount) {
+    return res.status(400).json({ error: 'Amount is required' });
+  }
+
+  if (!addedby) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  if (!shiftstoken) {
+    return res.status(400).json({ error: 'Shift token is required' });
+  }
 
   try {
+    // Check if amount is valid number
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ error: 'Please enter a valid amount greater than 0' });
+    }
 
-    
-    
-   
+    // Check if there's already an active opening balance for today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const existingBalance = await Balance.findOne({
+      date: { $gte: today, $lt: tomorrow },
+      status: "Active"
+    });
+
+    if (existingBalance) {
+      return res.status(400).json({
+        error: 'An opening balance already exists for today'
+      });
+    }
+
+    // Rest of your code remains the same...
     const latestBalance = await Balance.findOne({}).sort('-openningbalancenumber');
     let nextIdNumber = 'OB10001';
 
@@ -21,83 +54,59 @@ const createBalance = asyncHandler(async (req, res) => {
       nextIdNumber = `OB${nextNumericValue.toString().padStart(5, '0')}`;
     }
 
-   
-    const exists = await Balance.findOne({ openningbalancenumber: nextIdNumber });
-
-    if (exists) {
-      return res.status(400).json({ error: 'ID number already exists' });
-    }
-
-  
     const newEntry = new Balance({
       openningbalancenumber: nextIdNumber,
       amount: amount,
-      addedby:addedby,
-      shiftstoken:shiftstoken,
-      shiftacess:nextIdNumber,
+      addedby: addedby,
+      shiftstoken: shiftstoken,
+      shiftacess: nextIdNumber,
     });
 
-    
     const savedEntry = await newEntry.save();
 
+    // Transaction creation
     const sequence = await Transaction.findOne({}).sort('-transnumber');
-      
-        let newTransNumber = 'TR10001';
-  
-        if (sequence && sequence.transnumber) {
-          
-          const lastIdNumber = sequence.transnumber;
-          const numericPart = lastIdNumber.substring(2); 
-          const nextNumericValue = parseInt(numericPart, 10) + 1; 
-          newTransNumber = `TR${nextNumericValue.toString().padStart(5, '0')}`; 
-        }
-  
-        const exist = await Transaction.findOne({ transnumber: newTransNumber });
-  
-        if (exists) {
-          return res.status(400).json({ error: 'ID number already exists' });
-        }
-        let transtype ="Debit";
-        let transmode ="Openning Balance";
-  
-        const newTransaction = new Transaction({ 
-          accountsid:savedEntry._id,
-          transnumber:newTransNumber,
-          transmode:transmode,
-          amount:amount,
-          transtype:transtype,
-          shiftstoken:shiftstoken,
-          shiftacess:nextIdNumber,
-  
-  
-    
-    
-         
-        
-        });
-        await newTransaction.save();
+    let newTransNumber = 'TR10001';
 
-        const findUser = await User.findOne({ _id: addedby });
+    if (sequence && sequence.transnumber) {
+      const lastIdNumber = sequence.transnumber;
+      const numericPart = lastIdNumber.substring(2);
+      const nextNumericValue = parseInt(numericPart, 10) + 1;
+      newTransNumber = `TR${nextNumericValue.toString().padStart(5, '0')}`;
+    }
 
-        
-        const updateUser = await User.findByIdAndUpdate(
-          findUser.id,
-          {
-            shiftacess: nextIdNumber,
-          },
-          { new: true }
-        );
+    let transtype = "Debit";
+    let transmode = "Openning Balance";
 
+    const newTransaction = new Transaction({
+      accountsid: savedEntry._id,
+      transnumber: newTransNumber,
+      transmode: transmode,
+      amount: amount,
+      transtype: transtype,
+      shiftstoken: shiftstoken,
+      shiftacess: nextIdNumber,
+    });
 
+    await newTransaction.save();
 
-   
-    res.json(savedEntry);
+    const updateUser = await User.findByIdAndUpdate(
+      addedby,
+      { shiftacess: nextIdNumber },
+      { new: true }
+    );
+
+    res.status(201).json(savedEntry);
   } catch (error) {
     console.error('Error completing opening balance:', error);
 
-    // Handle specific Mongoose duplicate key error
-    if (error.code === 11000 && error.keyPattern && error.keyPattern.openningbalancenumber) {
-      return res.status(400).json({ error: 'ID number already exists' });
+    if (error.code === 11000) {
+      if (error.keyPattern?.openningbalancenumber) {
+        return res.status(400).json({ error: 'ID number already exists' });
+      }
+      if (error.keyPattern?.amount) {
+        return res.status(400).json({ error: 'This amount has already been used today. Please use a different amount.' });
+      }
     }
 
     res.status(500).json({ error: 'Internal Server Error' });
@@ -107,7 +116,7 @@ const createBalance = asyncHandler(async (req, res) => {
 
 // const checkBalance = asyncHandler(async (req, res) => {
 //     const today = new Date().toISOString().split('T')[0];
-  
+
 //     try {
 //       // const result = await Balance.findOne({
 //       //   date: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') },
@@ -116,7 +125,7 @@ const createBalance = asyncHandler(async (req, res) => {
 //         date: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') },
 //         status: "Active",
 //       });
-  
+
 //       if (result) {
 //         res.json({ hasOpeningBalance: true, openingBalance: result });
 //       } else {

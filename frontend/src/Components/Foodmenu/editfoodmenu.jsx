@@ -113,7 +113,7 @@ const EditFoodMenu = () => {
             label: ingredient.label,
           })
         );
-  
+
         setSelectedValues(foodIngredientIds);
         setSalesPrice(res.data.salesprice);
         setSelectVat(res.data.vatId);

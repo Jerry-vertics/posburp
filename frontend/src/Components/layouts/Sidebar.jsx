@@ -14,27 +14,35 @@ const Sidebar = () => {
   const [openingBalanceAmount, setOpeningBalanceAmount] = useState(0);
   const [lastOpeningBalanceDate, setLastOpeningBalanceDate] = useState(null);
 
-  useEffect(() => {
-    axios.get(`${apiConfig.baseURL}/api/openningbalance/opennigbalance`)
-      .then((response) => {
-        const { hasOpeningBalance, openingBalance } = response.data;
+useEffect(() => {
+  axios.get(`${apiConfig.baseURL}/api/openningbalance/opennigbalance`)
+    .then((response) => {
+      const { hasOpeningBalance, openingBalance } = response.data;
 
+      // Check if openingBalance exists and has the required properties
+      if (hasOpeningBalance && openingBalance && openingBalance.date) {
         const today = new Date().toDateString();
         const openingBalanceDate = new Date(openingBalance.date).toDateString();
 
         console.log(openingBalanceDate);
 
-        setIsOpeningBalanceComplete(hasOpeningBalance && openingBalanceDate === today);
+        setIsOpeningBalanceComplete(openingBalanceDate === today);
         setOpeningBalanceAmount(openingBalance.amount || 0);
         setLastOpeningBalanceDate(new Date(openingBalance.date));
-      })
-      .catch((error) => {
-        console.error('Error checking opening balance:', error);
+      } else {
+        // No valid opening balance data
         setIsOpeningBalanceComplete(false);
         setOpeningBalanceAmount(0);
         setLastOpeningBalanceDate(null);
-      });
-  }, []);
+      }
+    })
+    .catch((error) => {
+      console.error('Error checking opening balance:', error);
+      setIsOpeningBalanceComplete(false);
+      setOpeningBalanceAmount(0);
+      setLastOpeningBalanceDate(null);
+    });
+}, []);
 
   //console.log(lastOpeningBalanceDate);
   const Spinner = () => {

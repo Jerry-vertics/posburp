@@ -25,7 +25,6 @@ const OpenningBalance = () => {
 
 
 
-
   const handleSubmit = (event) => {
     event.preventDefault();
 

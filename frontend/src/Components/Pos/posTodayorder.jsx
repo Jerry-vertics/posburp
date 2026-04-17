@@ -5,6 +5,344 @@ import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import apiConfig from '../layouts/base_url';
 
+// Thermal Printer Component for Receipt
+const ThermalReceiptComponent = React.forwardRef(({ orderData, restaurantInfo = {} }, ref) => {
+  const defaultRestaurant = {
+    name: "TAHA Cafeteria",
+    address: "Electra street - opposite NMC",
+    city: "Al Danah - Zone 1 - Abu Dhabi",
+    phone: "02 632 8382",
+    vatNumber: "100123456789",
+    footer: "Thank you for dining with us!"
+  };
+
+  const restaurant = { ...defaultRestaurant, ...restaurantInfo };
+
+  // Calculate totals
+  const subtotal = orderData?.cart?.reduce((sum, item) =>
+    sum + (item.quantity * item.salesprice), 0) || 0;
+  const vatPercent = 5;
+  const vatAmount = (subtotal * vatPercent) / 100;
+  const netTotal = subtotal - vatAmount;
+  const grandTotal = netTotal + vatAmount;
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  };
+
+  const thermalStyles = {
+    container: {
+      fontFamily: "'Courier New', 'Fira Code', monospace",
+      fontSize: '11px',
+      lineHeight: '1.3',
+      width: '280px',
+      maxWidth: '100%',
+      margin: '0 auto',
+      padding: '8px 4px',
+      backgroundColor: 'white',
+      color: 'black'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '8px',
+      paddingBottom: '5px',
+      borderBottom: '1px dashed #000'
+    },
+    restaurantName: {
+      fontSize: '14px',
+      fontWeight: 'bold',
+      margin: '0 0 3px 0',
+      letterSpacing: '1px'
+    },
+    divider: {
+      borderTop: '1px dashed #000',
+      margin: '5px 0'
+    },
+    dividerDouble: {
+      borderTop: '2px solid #000',
+      margin: '5px 0'
+    },
+    row: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px'
+    },
+    itemRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px',
+      fontSize: '10px'
+    },
+    itemName: {
+      flex: 3,
+      wordBreak: 'break-word',
+      paddingRight: '6px'
+    },
+    itemQty: {
+      flex: 1,
+      textAlign: 'center'
+    },
+    itemPrice: {
+      flex: 1.5,
+      textAlign: 'right'
+    },
+    totalRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontWeight: 'bold',
+      marginTop: '5px',
+      paddingTop: '5px'
+    },
+    footer: {
+      textAlign: 'center',
+      marginTop: '10px',
+      paddingTop: '8px',
+      borderTop: '1px dashed #000',
+      fontSize: '9px'
+    }
+  };
+
+  return (
+    <div ref={ref} style={thermalStyles.container}>
+      <div style={thermalStyles.header}>
+        <div style={thermalStyles.restaurantName}>{restaurant.name}</div>
+        <div style={{ fontSize: '9px', margin: '2px 0' }}>{restaurant.address}</div>
+        <div style={{ fontSize: '9px' }}>{restaurant.city}</div>
+        <div style={{ fontSize: '9px' }}>Tel: {restaurant.phone}</div>
+        {restaurant.vatNumber && (
+          <div style={{ fontSize: '8px' }}>VAT: {restaurant.vatNumber}</div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <div style={thermalStyles.row}>
+          <span>Order #:</span>
+          <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
+        </div>
+        {orderData?.billnumber && (
+          <div style={thermalStyles.row}>
+            <span>Bill #:</span>
+            <span>{orderData.billnumber}</span>
+          </div>
+        )}
+        <div style={thermalStyles.row}>
+          <span>Date:</span>
+          <span>{formatDate(orderData?.date || Date.now())}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>Type:</span>
+          <span style={{ textTransform: 'uppercase' }}>{orderData?.options || 'N/A'}</span>
+        </div>
+        {orderData?.tableDetails && (
+          <div style={thermalStyles.row}>
+            <span>Table:</span>
+            <span>{orderData.tableDetails.tablename}</span>
+          </div>
+        )}
+        {orderData?.waiterDetails && (
+          <div style={thermalStyles.row}>
+            <span>Waiter:</span>
+            <span>{orderData.waiterDetails.firstname} {orderData.waiterDetails.lastname}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ ...thermalStyles.row, fontWeight: 'bold', marginBottom: '4px' }}>
+        <span style={{ flex: 3 }}>ITEM</span>
+        <span style={{ flex: 1, textAlign: 'center' }}>QTY</span>
+        <span style={{ flex: 1.5, textAlign: 'right' }}>TOTAL</span>
+      </div>
+
+      {orderData?.cart?.map((item, index) => (
+        <div key={index} style={thermalStyles.itemRow}>
+          <span style={thermalStyles.itemName}>
+            {item.menuItemDetails?.foodmenuname || item.foodmenuname || 'N/A'}
+          </span>
+          <span style={thermalStyles.itemQty}>x{item.quantity}</span>
+          <span style={thermalStyles.itemPrice}>
+            {(item.quantity * item.salesprice).toFixed(2)}
+          </span>
+        </div>
+      ))}
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ marginTop: '5px' }}>
+        <div style={thermalStyles.row}>
+          <span>Subtotal:</span>
+          <span>{netTotal.toFixed(2)}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>VAT ({vatPercent}%):</span>
+          <span>{vatAmount.toFixed(2)}</span>
+        </div>
+        <div style={{ ...thermalStyles.row, ...thermalStyles.totalRow }}>
+          <span style={{ fontSize: '12px' }}>GRAND TOTAL:</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{grandTotal.toFixed(2)} AED</span>
+        </div>
+      </div>
+
+      <div style={thermalStyles.dividerDouble} />
+
+      <div style={thermalStyles.footer}>
+        <div style={{ fontWeight: 'bold', marginBottom: '3px' }}>{restaurant.footer}</div>
+        <div style={{ fontSize: '8px', marginTop: '3px' }}>Please visit again!</div>
+        <div style={{ fontSize: '8px', marginTop: '3px' }}>*** Have a nice day ***</div>
+        <div style={{ fontSize: '7px', marginTop: '5px', letterSpacing: '1px' }}>
+          {Array(24).fill('=').join('')}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ThermalReceiptComponent.displayName = 'ThermalReceiptComponent';
+
+// Thermal KOT Component
+const ThermalKOTComponent = React.forwardRef(({ orderData, restaurantInfo = {} }, ref) => {
+  const defaultRestaurant = {
+    name: "TAHA Cafeteria",
+    address: "Electra street - opposite NMC",
+    city: "Al Danah - Zone 1 - Abu Dhabi",
+    phone: "02 632 8382"
+  };
+
+  const restaurant = { ...defaultRestaurant, ...restaurantInfo };
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  };
+
+  const thermalStyles = {
+    container: {
+      fontFamily: "'Courier New', 'Fira Code', monospace",
+      fontSize: '11px',
+      lineHeight: '1.3',
+      width: '280px',
+      maxWidth: '100%',
+      margin: '0 auto',
+      padding: '8px 4px',
+      backgroundColor: 'white',
+      color: 'black'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '8px',
+      paddingBottom: '5px',
+      borderBottom: '1px dashed #000'
+    },
+    restaurantName: {
+      fontSize: '14px',
+      fontWeight: 'bold',
+      margin: '0 0 3px 0',
+      letterSpacing: '1px'
+    },
+    kotTitle: {
+      textAlign: 'center',
+      fontWeight: 'bold',
+      fontSize: '12px',
+      margin: '5px 0',
+      padding: '3px',
+      backgroundColor: '#f0f0f0'
+    },
+    divider: {
+      borderTop: '1px dashed #000',
+      margin: '5px 0'
+    },
+    row: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px'
+    },
+    itemRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '3px',
+      padding: '2px 0'
+    },
+    itemName: {
+      flex: 3,
+      wordBreak: 'break-word'
+    },
+    itemQty: {
+      flex: 1,
+      textAlign: 'center',
+      fontWeight: 'bold'
+    },
+    footer: {
+      textAlign: 'center',
+      marginTop: '10px',
+      paddingTop: '8px',
+      borderTop: '1px dashed #000',
+      fontSize: '9px'
+    }
+  };
+
+  return (
+    <div ref={ref} style={thermalStyles.container}>
+      <div style={thermalStyles.header}>
+        <div style={thermalStyles.restaurantName}>{restaurant.name}</div>
+        <div style={{ fontSize: '9px' }}>{restaurant.address}</div>
+        <div style={{ fontSize: '9px' }}>{restaurant.city}</div>
+        <div style={{ fontSize: '9px' }}>Tel: {restaurant.phone}</div>
+      </div>
+
+      <div style={thermalStyles.kotTitle}>
+        KITCHEN ORDER TICKET (KOT)
+      </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <div style={thermalStyles.row}>
+          <span>Order #:</span>
+          <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>Time:</span>
+          <span>{formatDate(orderData?.date || Date.now())}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>Type:</span>
+          <span style={{ textTransform: 'uppercase' }}>{orderData?.options || 'N/A'}</span>
+        </div>
+        {orderData?.tableDetails && (
+          <div style={thermalStyles.row}>
+            <span>Table:</span>
+            <span>{orderData.tableDetails.tablename}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+        ITEMS ORDERED:
+      </div>
+
+      {orderData?.cart?.map((item, index) => (
+        <div key={index} style={thermalStyles.itemRow}>
+          <span style={thermalStyles.itemName}>
+            {index + 1}. {item.menuItemDetails?.foodmenuname || item.foodmenuname || 'N/A'}
+          </span>
+          <span style={thermalStyles.itemQty}>x {item.quantity}</span>
+        </div>
+      ))}
+
+      <div style={thermalStyles.divider} />
+
+      <div style={thermalStyles.footer}>
+        <div>Please prepare the above items</div>
+        <div style={{ fontSize: '8px', marginTop: '5px' }}>*** KOT generated ***</div>
+      </div>
+    </div>
+  );
+});
+
+ThermalKOTComponent.displayName = 'ThermalKOTComponent';
+
 const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) => {
   const [posTodayorder, setPosTodayorder] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -16,6 +354,7 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [printType, setPrintType] = useState('receipt'); // 'receipt' or 'kot'
 
   const [paymentError, setPaymentError] = useState('');
 
@@ -29,6 +368,7 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
   const [isCancelmodel, setCancelModel] = useState(false);
 
   const componentRef = useRef();
+  const kotComponentRef = useRef();
   const navigate = useNavigate();
 
   // Add refs for modal containers to handle click outside
@@ -111,143 +451,84 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
       }, 0)
     : 0;
 
-  // Handle print from modal
-  const handlePrintFromModal = () => {
-    if (componentRef.current) {
-      const printContents = componentRef.current.innerHTML;
-      const originalContents = document.body.innerHTML;
-
-      document.body.innerHTML = printContents;
-      window.print();
-      document.body.innerHTML = originalContents;
-
-      // Reload the page to restore functionality
-      window.location.reload();
+  // Thermal printer print function
+  const handleThermalPrint = (type = 'receipt') => {
+    if (type === 'receipt' && componentRef.current) {
+      const printContent = componentRef.current.innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print Receipt</title>
+            <style>
+              @page {
+                size: 58mm auto;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Courier New', monospace;
+              }
+              @media print {
+                body { margin: 0; padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+            <script>
+              window.onload = function() {
+                window.print();
+                window.close();
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else if (type === 'kot' && kotComponentRef.current) {
+      const printContent = kotComponentRef.current.innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print KOT</title>
+            <style>
+              @page {
+                size: 58mm auto;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Courier New', monospace;
+              }
+              @media print {
+                body { margin: 0; padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+            <script>
+              window.onload = function() {
+                window.print();
+                window.close();
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     }
   };
 
-  // New function for print preview
-  const handlePrintPreview = (order, type = 'invoice') => {
+  // New function for print preview with thermal printer format
+  const handlePrintPreview = (order, type = 'receipt') => {
     setOrderData(order);
+    setPrintType(type);
     setShowPrintModal(true);
-  };
-
-  // Function to trigger actual printing
-  const handlePrints = () => {
-    const printWindow = window.open('', '_blank');
-    const content = generatePrintContent();
-
-    printWindow.document.open();
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Print Receipt</title>
-          <style>
-            @media print {
-              body { font-family: Arial, sans-serif; max-width: 300px; margin: 0 auto; }
-              @page { margin: 0; }
-              .print-content { padding: 10px; }
-              .header { text-align: center; margin-bottom: 20px; }
-              .item-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-              .total-row { border-top: 2px solid #000; margin-top: 10px; padding-top: 5px; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-content">
-            ${content}
-          </div>
-          <script>
-            window.onload = function() { window.print(); window.close(); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
-
-  const generatePrintContent = () => {
-    if (!orderData) return '';
-
-    // Calculate totals
-    const subtotal = orderData.cart?.reduce((sum, item) =>
-      sum + (item.quantity * item.salesprice), 0) || 0;
-    const vatPercentValue = 5;
-    const vatAmounts = (subtotal * vatPercentValue) / 100;
-    const fixedsubtotal = subtotal - vatAmounts;
-    const overallTotal = fixedsubtotal + vatAmounts;
-
-    const orderDate = new Date(orderData.date || Date.now());
-    const formattedDate = orderDate.toLocaleDateString();
-    const formattedTime = orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    return `
-      <div class="header">
-        <h3 style="margin: 0 0 5px 0; font-weight: bold;">RESTAURANT NAME</h3>
-        <p style="margin: 0; font-size: 12px;">Restaurant Address</p>
-        <p style="margin: 0; font-size: 12px;">Phone: +1234567890</p>
-        <hr style="margin: 10px 0; border-color: #000;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <div class="item-row">
-          <span>Order No:</span>
-          <span style="font-weight: bold;">${orderData.ordernumber || 'N/A'}</span>
-        </div>
-        <div class="item-row">
-          <span>Date:</span>
-          <span>${formattedDate}</span>
-        </div>
-        <div class="item-row">
-          <span>Time:</span>
-          <span>${formattedTime}</span>
-        </div>
-        <div class="item-row">
-          <span>Type:</span>
-          <span>${orderData.options || 'N/A'}</span>
-        </div>
-        <hr style="margin: 10px 0; border-color: #000;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #000; padding-bottom: 5px;">
-          <div>ITEM</div>
-          <div style="text-align: center;">QTY</div>
-          <div style="text-align: right;">AMOUNT</div>
-        </div>
-
-        ${orderData.cart?.map(item => `
-          <div class="item-row">
-            <div style="word-break: break-word; flex: 2;">${item.menuItemDetails?.foodmenuname || item.foodmenuname || 'N/A'}</div>
-            <div style="text-align: center; flex: 1;">${item.quantity}</div>
-            <div style="text-align: right; flex: 1;">${(item.quantity * item.salesprice).toFixed(2)}</div>
-          </div>
-        `).join('')}
-
-        <hr style="margin: 10px 0; border-color: #000;">
-      </div>
-
-      <div style="font-size: 12px;">
-        <div class="item-row">
-          <span>Sub Total:</span>
-          <span>${fixedsubtotal.toFixed(2)}</span>
-        </div>
-        <div class="item-row">
-          <span>VAT Amount (${vatPercentValue}%):</span>
-          <span>${vatAmounts.toFixed(2)}</span>
-        </div>
-        <div class="item-row total-row" style="font-weight: bold; font-size: 14px;">
-          <span>Overall Total:</span>
-          <span>${overallTotal.toFixed(2)}</span>
-        </div>
-      </div>
-
-      <div style="text-align: center; margin-top: 20px; font-size: 11px; border-top: 1px dashed #000; padding-top: 10px;">
-        <p style="margin: 5px 0;">Thank you for dining with us!</p>
-        <p style="margin: 5px 0; font-weight: bold;">Please visit again</p>
-        <p style="margin: 5px 0;">*** Have a nice day ***</p>
-      </div>
-    `;
   };
 
   const handleComplete = (id) => {
@@ -655,13 +936,12 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
                     onClick={(e) => {
                       e.stopPropagation();
                       if (data && data[0]) {
-                        setOrderData(data[0]);
-                        setShowPrintModal(true);
+                        handlePrintPreview(data[0], 'receipt');
                         setShowModal(false);
                       }
                     }}
                   >
-                    <i className="mdi mdi-printer mr-1"></i> Print
+                    <i className="mdi mdi-printer mr-1"></i> Print Receipt
                   </button>
                   <button
                     type="button"
@@ -763,8 +1043,7 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
                     onClick={(e) => {
                       e.stopPropagation();
                       if (kotdata && kotdata[0]) {
-                        setOrderData(kotdata[0]);
-                        setShowPrintModal(true);
+                        handlePrintPreview(kotdata[0], 'kot');
                         setShowKotModal(false);
                       }
                     }}
@@ -888,7 +1167,7 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
         </>
       )}
 
-      {/* Print Modal */}
+      {/* Thermal Printer Print Modal */}
       {showPrintModal && (
         <>
           <div
@@ -906,149 +1185,58 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
             }}
           >
             <div
-              className="modal-dialog modal-lg"
+              className="modal-dialog modal-sm"
               role="document"
-              style={{ maxWidth: '800px', zIndex: 1071 }}
+              style={{ maxWidth: '320px', zIndex: 1071 }}
               ref={printModalRef}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="modal-content">
-                <div className="modal-header bg-primary text-white">
-                  <h5 className="modal-title">
+              <div className="modal-content" style={{ borderRadius: '8px' }}>
+                <div className="modal-header bg-primary text-white" style={{ padding: '10px 15px' }}>
+                  <h5 className="modal-title" style={{ fontSize: '16px' }}>
                     <i className="fas fa-print mr-2"></i>
-                    Print Preview
+                    {printType === 'receipt' ? 'Print Receipt' : 'Print KOT'}
                   </h5>
                   <button
                     type="button"
                     className="close text-white"
                     onClick={() => setShowPrintModal(false)}
+                    style={{ opacity: 1 }}
                   >
                     <span>&times;</span>
                   </button>
                 </div>
-                <div className="modal-body p-4" ref={componentRef}>
-                  <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '300px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                      <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>RESTAURANT NAME</h3>
-                      <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 1</p>
-                      <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 2</p>
-                      <p style={{ margin: '0', fontSize: '12px' }}>Phone: +1234567890</p>
-                      <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Order No:</span>
-                        <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
-                      </div>
-                      {orderData?.billnumber && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                          <span>Bill No:</span>
-                          <span style={{ fontWeight: 'bold' }}>{orderData.billnumber}</span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Date:</span>
-                        <span>{orderData?.date ? new Date(orderData.date).toLocaleDateString() : 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Time:</span>
-                        <span>{orderData?.date ? new Date(orderData.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Type:</span>
-                        <span>{orderData?.options || 'N/A'}</span>
-                      </div>
-                      <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        marginBottom: '5px',
-                        borderBottom: '1px solid #000',
-                        paddingBottom: '5px'
-                      }}>
-                        <div>ITEM</div>
-                        <div style={{ textAlign: 'center' }}>QTY</div>
-                        <div style={{ textAlign: 'right' }}>AMOUNT</div>
-                      </div>
-
-                      {orderData?.cart?.map((item, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 1fr',
-                            fontSize: '12px',
-                            marginBottom: '3px'
-                          }}
-                        >
-                          <div style={{ wordBreak: 'break-word' }}>{item.menuItemDetails?.foodmenuname || item.foodmenuname || 'N/A'}</div>
-                          <div style={{ textAlign: 'center' }}>{item.quantity}</div>
-                          <div style={{ textAlign: 'right' }}>{(item.quantity * item.salesprice).toFixed(2)}</div>
-                        </div>
-                      ))}
-
-                      <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-                    </div>
-
-                    <div style={{ fontSize: '12px' }}>
-                      {(() => {
-                        const subtotal = orderData?.cart?.reduce((sum, item) =>
-                          sum + (item.quantity * item.salesprice), 0) || 0;
-                        const vatPercentValue = 5;
-                        const vatAmounts = (subtotal * vatPercentValue) / 100;
-                        const fixedsubtotal = subtotal - vatAmounts;
-                        const overallTotal = fixedsubtotal + vatAmounts;
-
-                        return (
-                          <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                              <span>Sub Total:</span>
-                              <span>{fixedsubtotal.toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                              <span>VAT Amount ({vatPercentValue}%):</span>
-                              <span>{vatAmounts.toFixed(2)}</span>
-                            </div>
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              fontWeight: 'bold',
-                              fontSize: '14px',
-                              marginTop: '10px',
-                              paddingTop: '5px',
-                              borderTop: '2px solid #000'
-                            }}>
-                              <span>Overall Total:</span>
-                              <span>{overallTotal.toFixed(2)}</span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-
-                    <div style={{
-                      textAlign: 'center',
-                      marginTop: '20px',
-                      fontSize: '11px',
-                      borderTop: '1px dashed #000',
-                      paddingTop: '10px'
-                    }}>
-                      <p style={{ margin: '5px 0' }}>Thank you for dining with us!</p>
-                      <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Please visit again</p>
-                      <p style={{ margin: '5px 0' }}>*** Have a nice day ***</p>
-                    </div>
-                  </div>
+                <div className="modal-body p-0" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                  {printType === 'receipt' ? (
+                    <ThermalReceiptComponent
+                      ref={componentRef}
+                      orderData={orderData}
+                      restaurantInfo={{
+                        name: "TAHA Cafeteria",
+                        address: "Electra street - opposite NMC",
+                        city: "Al Danah - Zone 1 - Abu Dhabi",
+                        phone: "02 632 8382",
+                        vatNumber: "100123456789",
+                        footer: "Thank you for dining with us!"
+                      }}
+                    />
+                  ) : (
+                    <ThermalKOTComponent
+                      ref={kotComponentRef}
+                      orderData={orderData}
+                      restaurantInfo={{
+                        name: "TAHA Cafeteria",
+                        address: "Electra street - opposite NMC",
+                        city: "Al Danah - Zone 1 - Abu Dhabi",
+                        phone: "02 632 8382"
+                      }}
+                    />
+                  )}
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer" style={{ padding: '10px', justifyContent: 'space-between' }}>
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary btn-sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowPrintModal(false);
@@ -1058,13 +1246,13 @@ const PosTodayOrder = ({ isModalTodayOrderReport, setModalTodayOrderReport }) =>
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handlePrints();
+                      handleThermalPrint(printType);
                     }}
                   >
-                    <i className="fas fa-print mr-1"></i> Print Receipt
+                    <i className="fas fa-print mr-1"></i> Print
                   </button>
                 </div>
               </div>

@@ -42,8 +42,235 @@ import PrintComponent from "./print/posPrint";
 import PosCancelOrder from "./neworder/posCancelOrders";
 import PosNewCustomerModal from "./neworder/PosNewCustomerModal";
 
+// ==================== THERMAL PRINTER COMPONENT ====================
+const ThermalPrintComponent = React.forwardRef(({ orderData, restaurantInfo = {} }, ref) => {
+  const defaultRestaurant = {
+    name: "TAHA Cafeteria",
+    address: "Electra street - opposite NMC",
+    city: "Al Danah - Zone 1 - Abu Dhabi",
+    phone: "02 632 8382",
+    vatNumber: "100123456789",
+    footer: "Thank you for dining with us!"
+  };
 
+  const restaurant = { ...defaultRestaurant, ...restaurantInfo };
 
+  // Safe number conversion
+  const safeToNumber = (value) => {
+    if (value === null || value === undefined) return 0;
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+  };
+
+  // Calculate totals
+  const subtotal = orderData?.cart?.reduce((sum, item) =>
+    sum + (safeToNumber(item.quantity) * safeToNumber(item.salesprice)), 0) || 0;
+  const vatPercent = 5;
+  const vatAmount = (subtotal * vatPercent) / 100;
+  const netTotal = subtotal - vatAmount;
+  const grandTotal = subtotal;
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  };
+
+  const formatPrice = (price) => {
+    const num = safeToNumber(price);
+    return num.toFixed(2);
+  };
+
+  const thermalStyles = {
+    container: {
+      fontFamily: "'Courier New', 'Fira Code', monospace",
+      fontSize: '11px',
+      lineHeight: '1.3',
+      width: '280px',
+      maxWidth: '100%',
+      margin: '0 auto',
+      padding: '8px 4px',
+      backgroundColor: 'white',
+      color: 'black'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '8px',
+      paddingBottom: '5px',
+      borderBottom: '1px dashed #000'
+    },
+    restaurantName: {
+      fontSize: '14px',
+      fontWeight: 'bold',
+      margin: '0 0 3px 0',
+      letterSpacing: '1px'
+    },
+    divider: {
+      borderTop: '1px dashed #000',
+      margin: '5px 0'
+    },
+    dividerDouble: {
+      borderTop: '2px solid #000',
+      margin: '5px 0'
+    },
+    row: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px'
+    },
+    itemRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px',
+      fontSize: '10px'
+    },
+    itemName: {
+      flex: 3,
+      wordBreak: 'break-word',
+      paddingRight: '6px'
+    },
+    itemQty: {
+      flex: 1,
+      textAlign: 'center'
+    },
+    itemPrice: {
+      flex: 1.5,
+      textAlign: 'right'
+    },
+    totalRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontWeight: 'bold',
+      marginTop: '5px',
+      paddingTop: '5px'
+    },
+    footer: {
+      textAlign: 'center',
+      marginTop: '10px',
+      paddingTop: '8px',
+      borderTop: '1px dashed #000',
+      fontSize: '9px'
+    }
+  };
+
+  return (
+    <div ref={ref} style={thermalStyles.container}>
+      <div style={thermalStyles.header}>
+        <div style={thermalStyles.restaurantName}>{restaurant.name}</div>
+        <div style={{ fontSize: '9px', margin: '2px 0' }}>{restaurant.address}</div>
+        <div style={{ fontSize: '9px' }}>{restaurant.city}</div>
+        <div style={{ fontSize: '9px' }}>Tel: {restaurant.phone}</div>
+        {restaurant.vatNumber && (
+          <div style={{ fontSize: '8px' }}>VAT: {restaurant.vatNumber}</div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <div style={thermalStyles.row}>
+          <span>Order #:</span>
+          <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
+        </div>
+        {orderData?.billnumber && (
+          <div style={thermalStyles.row}>
+            <span>Bill #:</span>
+            <span>{orderData.billnumber}</span>
+          </div>
+        )}
+        <div style={thermalStyles.row}>
+          <span>Date:</span>
+          <span>{formatDate(orderData?.date || Date.now())}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>Time:</span>
+          <span>{new Date(orderData?.date || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>Type:</span>
+          <span style={{ textTransform: 'uppercase' }}>{orderData?.options || 'N/A'}</span>
+        </div>
+        {orderData?.options === 'Carhop' && orderData?.vehicle && (
+          <div style={thermalStyles.row}>
+            <span>Vehicle:</span>
+            <span>{orderData.vehicle.carNumber}</span>
+          </div>
+        )}
+        {orderData?.tableDetails?.tablename && (
+          <div style={thermalStyles.row}>
+            <span>Table:</span>
+            <span>{orderData.tableDetails.tablename}</span>
+          </div>
+        )}
+        {orderData?.waiterDetails && (
+          <div style={thermalStyles.row}>
+            <span>Waiter:</span>
+            <span>{orderData.waiterDetails.firstname} {orderData.waiterDetails.lastname}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ ...thermalStyles.row, fontWeight: 'bold', marginBottom: '4px' }}>
+        <span style={{ flex: 3 }}>ITEM</span>
+        <span style={{ flex: 1, textAlign: 'center' }}>QTY</span>
+        <span style={{ flex: 1.5, textAlign: 'right' }}>TOTAL</span>
+      </div>
+
+      {orderData?.cart?.map((item, index) => {
+        const quantity = safeToNumber(item.quantity);
+        const price = safeToNumber(item.salesprice);
+        const total = quantity * price;
+        const itemName = item.menuItemDetails?.foodmenuname || item.foodmenuname || 'N/A';
+
+        return (
+          <div key={index} style={thermalStyles.itemRow}>
+            <span style={thermalStyles.itemName}>{itemName}</span>
+            <span style={thermalStyles.itemQty}>x{quantity}</span>
+            <span style={thermalStyles.itemPrice}>{formatPrice(total)}</span>
+          </div>
+        );
+      })}
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ marginTop: '5px' }}>
+        <div style={thermalStyles.row}>
+          <span>Subtotal:</span>
+          <span>{formatPrice(netTotal)}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>VAT ({vatPercent}%):</span>
+          <span>{formatPrice(vatAmount)}</span>
+        </div>
+        <div style={{ ...thermalStyles.row, ...thermalStyles.totalRow }}>
+          <span style={{ fontSize: '12px' }}>GRAND TOTAL:</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{formatPrice(grandTotal)} AED</span>
+        </div>
+      </div>
+
+      {orderData?.paymentType && (
+        <div style={thermalStyles.row}>
+          <span>Payment:</span>
+          <span>{orderData.paymentType}</span>
+        </div>
+      )}
+
+      <div style={thermalStyles.dividerDouble} />
+
+      <div style={thermalStyles.footer}>
+        <div style={{ fontWeight: 'bold', marginBottom: '3px' }}>{restaurant.footer}</div>
+        <div style={{ fontSize: '8px', marginTop: '3px' }}>Please visit again!</div>
+        <div style={{ fontSize: '8px', marginTop: '3px' }}>*** Have a nice day ***</div>
+        <div style={{ fontSize: '7px', marginTop: '5px', letterSpacing: '1px' }}>
+          {Array(24).fill('=').join('')}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ThermalPrintComponent.displayName = 'ThermalPrintComponent';
+
+// ==================== MAIN COMPONENT ====================
 const PosNewOrder = () => {
   // ============= STATE DECLARATIONS =============
   const [addedby, setuserid] = useState("");
@@ -193,7 +420,6 @@ const PosNewOrder = () => {
 
   // Fetch initial data
   useEffect(() => {
-    // Fetch waiters
     axios
       .get(`${apiConfig.baseURL}/api/pos/posWaiter`)
       .then((response) => {
@@ -203,7 +429,6 @@ const PosNewOrder = () => {
         console.error(error);
       });
 
-    // Fetch delivery persons
     axios
       .get(`${apiConfig.baseURL}/api/pos/posDelivery`)
       .then((response) => {
@@ -213,7 +438,6 @@ const PosNewOrder = () => {
         console.error(error);
       });
 
-    // Fetch tables and customers
     axios
       .get(`${apiConfig.baseURL}/api/pos/tableorder`)
       .then((response) => {
@@ -225,7 +449,6 @@ const PosNewOrder = () => {
 
     fetchCustomers();
 
-    // Fetch food items
     axios
       .get(`${apiConfig.baseURL}/api/pos/posfood`)
       .then((response) => {
@@ -278,8 +501,75 @@ const PosNewOrder = () => {
       });
   };
 
+  // ============= THERMAL PRINT FUNCTION =============
+  const handleThermalPrint = () => {
+    if (componentRef.current) {
+      const printContent = componentRef.current.innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Print Receipt</title>
+            <meta charset="UTF-8">
+            <style>
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              @page {
+                size: 58mm auto;
+                margin: 0mm;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Courier New', 'Fira Code', monospace;
+                background: white;
+                width: 58mm;
+              }
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 0;
+                  width: 58mm;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+            <script>
+              window.onload = function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   // ============= HANDLERS =============
-  // Vehicle details handlers
+  const handleQuickSalesSelect = () => {
+    setOptions('Quick Sales');
+    setOrderFlow({ step: 'foodmenu', selectedOption: 'Quick Sales' });
+    setEnableFoodmenu(true);
+    setShowFoodMenuTab(true);
+
+    setTimeout(() => {
+      const foodMenuTab = document.querySelector('a[href="#foodmenu"]');
+      if (foodMenuTab) {
+        foodMenuTab.click();
+      }
+    }, 100);
+  };
+
   const handleVehicleDetailsChange = (e) => {
     const { name, value } = e.target;
     setVehicleDetails(prev => ({
@@ -302,7 +592,6 @@ const PosNewOrder = () => {
     setShowVehicleTab(false);
   };
 
-  // Search handlers
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -323,7 +612,6 @@ const PosNewOrder = () => {
     setSearchDeliveryPerson(e.target.value);
   };
 
-  // Clear all selections
   const handleClearClick = () => {
     setSelectWaiter("");
     setSelectCustomer("");
@@ -342,7 +630,6 @@ const PosNewOrder = () => {
     });
   };
 
-  // Option selection handler
   const handleOptionSelect = (option) => {
     setOptions(option);
     setOrderFlow({ step: 'next', selectedOption: option });
@@ -371,7 +658,6 @@ const PosNewOrder = () => {
     }
   };
 
-  // Waiter selection handler
   const handleWaiter = (details) => {
     setSelectWaiter(details);
 
@@ -392,7 +678,6 @@ const PosNewOrder = () => {
     }, 100);
   };
 
-  // Table selection handler
   const handleTable = (tables) => {
     const personCount = numberofperson[tables._id];
 
@@ -408,20 +693,26 @@ const PosNewOrder = () => {
     }
   };
 
-  // Customer selection handler
   const handleCustomerSelect = (customer) => {
     setSelectCustomer(customer);
     setOrderFlow({ step: 'delivery', selectedOption: 'Delivery' });
     setShowDeliveryTab(true);
   };
 
-  // Delivery person selection handler
   const handleDeliveryPersonSelect = (deliveryPerson) => {
     setSelectDelivery(deliveryPerson);
-    setOrderFlow({ step: 'waiter', selectedOption: 'Delivery' });
+    setOrderFlow({ step: 'foodmenu', selectedOption: 'Delivery' });
+    setEnableFoodmenu(true);
+    setShowFoodMenuTab(true);
+
+    setTimeout(() => {
+      const foodMenuTab = document.querySelector('a[href="#foodmenu"]');
+      if (foodMenuTab) {
+        foodMenuTab.click();
+      }
+    }, 100);
   };
 
-  // Person count handlers
   const handlePersonCountChange = (tableId, action) => {
     const currentValue = parseInt(numberofperson[tableId] || 0);
     const table = filteredTables.find(t => t._id === tableId);
@@ -473,7 +764,6 @@ const PosNewOrder = () => {
     return personCount > 0 && personCount <= maxAllowed;
   };
 
-  // Cart handlers
   const addProductToCart = async (menu) => {
     let findProductInCart = cart.find((i) => {
       return i._id === menu._id;
@@ -538,37 +828,117 @@ const PosNewOrder = () => {
     setActiveTab(index);
   };
 
-  // Order placement handlers
   const handlePlaceorder = async (event) => {
     event.preventDefault();
 
-    if (!selectWaiter) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Waiter is Empty',
-        text: 'Please select a waiter before placing an order.',
-      });
-      return;
-    } else if (cart.length < 1) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Cart is empty',
-        text: 'Please add items to your cart before placing an order.',
-      });
-      return;
-    } else if (!options) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Options not selected',
-        text: 'Please select options before placing an order.',
-      });
-      return;
+    if (options === 'Quick Sales') {
+      if (cart.length < 1) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cart is empty',
+          text: 'Please add items to your cart before placing an order.',
+        });
+        return;
+      }
+    } else if (options === 'Delivery') {
+      if (!selectCustomer) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Customer is Empty',
+          text: 'Please select a customer before placing an order.',
+        });
+        return;
+      }
+      if (!selectDelivery) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Delivery Person is Empty',
+          text: 'Please select a delivery person before placing an order.',
+        });
+        return;
+      }
+      if (cart.length < 1) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cart is empty',
+          text: 'Please add items to your cart before placing an order.',
+        });
+        return;
+      }
+    } else if (options === 'Dine In') {
+      if (!selectTable) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Table is Empty',
+          text: 'Please select a table before placing an order.',
+        });
+        return;
+      }
+      if (!selectWaiter) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Waiter is Empty',
+          text: 'Please select a waiter before placing an order.',
+        });
+        return;
+      }
+      if (cart.length < 1) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cart is empty',
+          text: 'Please add items to your cart before placing an order.',
+        });
+        return;
+      }
+    } else if (options === 'Carhop') {
+      if (!vehicleDetails.carName || !vehicleDetails.carNumber) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Vehicle Details Missing',
+          text: 'Please enter vehicle details before placing an order.',
+        });
+        return;
+      }
+      if (!selectWaiter) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Waiter is Empty',
+          text: 'Please select a waiter before placing an order.',
+        });
+        return;
+      }
+      if (cart.length < 1) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cart is empty',
+          text: 'Please add items to your cart before placing an order.',
+        });
+        return;
+      }
+    } else {
+      if (!selectWaiter) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Waiter is Empty',
+          text: 'Please select a waiter before placing an order.',
+        });
+        return;
+      }
+      if (cart.length < 1) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cart is empty',
+          text: 'Please add items to your cart before placing an order.',
+        });
+        return;
+      }
     }
 
     setLoadingPlaceOrder(true);
 
     try {
       var posData = new FormData();
+
       if (selectCustomer && selectCustomer._id) {
         posData.append('customers', selectCustomer._id);
       }
@@ -618,7 +988,7 @@ const PosNewOrder = () => {
         text: 'Do you want to print the receipt?',
         icon: 'success',
         showCancelButton: true,
-        confirmButtonText: 'Yes, show print preview',
+        confirmButtonText: 'Yes, print receipt',
         cancelButtonText: 'No, continue',
         showCloseButton: true,
         focusConfirm: false,
@@ -807,7 +1177,7 @@ const PosNewOrder = () => {
           text: 'Do you want to print the receipt?',
           icon: 'success',
           showCancelButton: true,
-          confirmButtonText: 'Yes, show print preview',
+          confirmButtonText: 'Yes, print receipt',
           cancelButtonText: 'No, continue',
           showCloseButton: true,
           focusConfirm: false,
@@ -825,7 +1195,6 @@ const PosNewOrder = () => {
               options: options,
               vehicle: options === 'Carhop' ? vehicleDetails : null
             };
-
             setOrderData(orderData);
             setShowPrintModal(true);
             handleClearClick();
@@ -847,16 +1216,6 @@ const PosNewOrder = () => {
       });
   };
 
-  // Print handlers
-  const handlePrints = useReactToPrint({
-    content: () => componentRef.current,
-  });
-
-  const handlequickPrint = useReactToPrint({
-    content: () => printComponentRef.current,
-  });
-
-  // Modal handlers
   const handleTabClick = () => {
     setModalOpen(true);
   };
@@ -903,7 +1262,6 @@ const PosNewOrder = () => {
 
   // ============= RENDER FUNCTIONS =============
   const getCurrentTabContent = () => {
-    // Options tab
     if (!options) {
       return (
         <div className="tab-pane active" id="options" role="tabpanel">
@@ -914,7 +1272,7 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Dine In')}
                 >
-                 <img src="assets/images/dinein.png" className="foodiconimg" />
+                  <img src="assets/images/dinein.png" className="foodiconimg" />
                   <h5>Dine In</h5>
                 </div>
               </div>
@@ -923,7 +1281,7 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Take Away')}
                 >
-                   <img src="assets/images/takeway.png" className="foodiconimg" />
+                  <img src="assets/images/takeway.png" className="foodiconimg" />
                   <h5>Take Away</h5>
                 </div>
               </div>
@@ -941,7 +1299,6 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Online')}
                 >
-                  {/* <MdBookOnline className="option-icon" /> */}
                   <img src="assets/images/online.png" className="foodiconimg" />
                   <h5>Online</h5>
                 </div>
@@ -951,9 +1308,18 @@ const PosNewOrder = () => {
                   className="option-box"
                   onClick={() => handleOptionSelect('Carhop')}
                 >
-                  {/* <FaCar className="option-icon" /> */}
-                   <img src="assets/images/carhop.png" className="foodiconimg" />
+                  <img src="assets/images/carhop.png" className="foodiconimg" />
                   <h5>Carhop</h5>
+                </div>
+              </div>
+              <div className="col-custom-5 mb-3">
+                <div
+                  className="option-box"
+                  onClick={handleQuickSalesSelect}
+                  style={{ backgroundColor: '#f0f9ff', borderColor: '#0ea5e9' }}
+                >
+                  <img src="assets/images/quick-sales.png" className="foodiconimg" />
+                  <h5>Quick Sales</h5>
                 </div>
               </div>
             </div>
@@ -962,7 +1328,6 @@ const PosNewOrder = () => {
       );
     }
 
-    // Vehicle tab for Carhop
     if (orderFlow.step === 'vehicle' && options === 'Carhop') {
       return (
         <div className="tab-pane active" id="vehicle" role="tabpanel">
@@ -1022,7 +1387,6 @@ const PosNewOrder = () => {
       );
     }
 
-    // Table selection for Dine In
     if (orderFlow.step === 'table' && options === 'Dine In') {
       return (
         <div className="tab-pane active" id="table" role="tabpanel">
@@ -1125,8 +1489,7 @@ const PosNewOrder = () => {
       );
     }
 
-    // Waiter selection
-    if (orderFlow.step === 'waiter') {
+    if (orderFlow.step === 'waiter' && options !== 'Delivery' && options !== 'Quick Sales') {
       return (
         <div className="tab-pane active" id="waiter" role="tabpanel">
           <h5 className="mb-3">Select Waiter</h5>
@@ -1160,7 +1523,6 @@ const PosNewOrder = () => {
       );
     }
 
-    // Customer selection for Delivery (with New Customer button)
     if (orderFlow.step === 'customer' && options === 'Delivery') {
       return (
         <div className="tab-pane active" id="customer" role="tabpanel">
@@ -1209,7 +1571,6 @@ const PosNewOrder = () => {
                       <small className="text-muted d-block">
                         {customer.customermobile}
                       </small>
-
                     </div>
                   </div>
                 </div>
@@ -1220,7 +1581,6 @@ const PosNewOrder = () => {
       );
     }
 
-    // Delivery person selection for Delivery
     if (orderFlow.step === 'delivery' && options === 'Delivery') {
       return (
         <div className="tab-pane active" id="delivery" role="tabpanel">
@@ -1234,17 +1594,22 @@ const PosNewOrder = () => {
           />
           <br />
           <div className="row">
-            {filteredDelivery.map((delivery, index) => (
+            {filteredDelivery.map((deliveryPerson, index) => (
               <div className="col-sm-6 col-md-4 col-lg-3" key={index}>
                 <div
                   className="menu-box"
-                  onClick={() => handleDeliveryPersonSelect(delivery)}
+                  onClick={() => handleDeliveryPersonSelect(deliveryPerson)}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <h6>
-                    <MdDeliveryDining className="mr-2" />
-                    <br />
-                    {delivery.firstname} {delivery.lastname}
-                  </h6>
+                  <div className="text-center p-3">
+                    <MdDeliveryDining size={24} className="mb-2" />
+                    <h6 className="mb-1">
+                      {deliveryPerson.firstname} {deliveryPerson.lastname}
+                    </h6>
+                    {deliveryPerson.phone && (
+                      <small className="text-muted d-block">{deliveryPerson.phone}</small>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1253,7 +1618,6 @@ const PosNewOrder = () => {
       );
     }
 
-    // Food menu
     if (orderFlow.step === 'foodmenu' && showFoodMenuTab) {
       return (
         <div className="tab-pane active" id="foodmenu" role="tabpanel">
@@ -1263,6 +1627,42 @@ const PosNewOrder = () => {
               <strong>Vehicle:</strong> {vehicleDetails.carName} - {vehicleDetails.carNumber}
             </div>
           )}
+          {options === 'Delivery' && selectCustomer && (
+            <div className="customer-info alert alert-primary mb-3 p-2">
+              <FaUserAlt className="mr-2" />
+              <strong>Customer:</strong> {selectCustomer.customername}
+              {selectCustomer.customermobile && ` (${selectCustomer.customermobile})`}
+              {selectDelivery && (
+                <>
+                  <br />
+                  <MdDeliveryDining className="mr-2" />
+                  <strong>Delivery Boy:</strong> {selectDelivery.firstname} {selectDelivery.lastname}
+                </>
+              )}
+            </div>
+          )}
+          {options === 'Dine In' && selectTable && (
+            <div className="table-info alert alert-success mb-3 p-2">
+              <SiTablecheck className="mr-2" />
+              <strong>Table:</strong> {selectTable.tablename} | Persons: {numberofperson[selectTable._id]}
+              {selectWaiter && (
+                <> | <TbChefHat className="mr-1" /> Waiter: {selectWaiter.firstname} {selectWaiter.lastname}</>
+              )}
+            </div>
+          )}
+          {(options === 'Take Away' || options === 'Online') && selectWaiter && (
+            <div className="waiter-info alert alert-warning mb-3 p-2">
+              <TbChefHat className="mr-2" />
+              <strong>Order Type:</strong> {options} | Waiter: {selectWaiter.firstname} {selectWaiter.lastname}
+            </div>
+          )}
+          {options === 'Quick Sales' && (
+            <div className="quick-sales-info alert alert-info mb-3 p-2">
+              <IoFastFoodSharp className="mr-2" />
+              <strong>Quick Sales Order</strong> - No waiter assignment required
+            </div>
+          )}
+
           <div className="tbl-h">
             <div className="form-group">
               <input
@@ -1348,7 +1748,6 @@ const PosNewOrder = () => {
                             <div className="col-sm-6 col-md-4 col-lg-3" key={index}>
                               <div className="foodmenu-box" onClick={() => addProductToCart(menu)}>
                                 <div className="foodmenu-div">
-                                  {/* <img src={`/uploads/${menu.photo}`} className="foodimg" alt={menu.foodmenuname} /> */}
                                   <img src="assets/images/foodmenu.jpg" className="foodimg" alt={menu.foodmenuname} />
                                   <div className="menu-details">
                                     <h6 className="mt-2">{menu.foodmenuname}</h6>
@@ -1383,101 +1782,93 @@ const PosNewOrder = () => {
     return null;
   };
 
-  // ============= RENDER COMPONENT =============
+  // ============= MAIN RENDER =============
   return (
-    <div className="row">
-      {/* Left Menu Column */}
-      <div className="col-12 col-sm-12 col-md-3 col-lg-1 ">
-        <div className="pos-menu poscards">
-          <button className="pos-btn active" onClick={handleClearClick} title="Clear all items">
-            <FaHistory className="pos-icon" />
-            Clear
-          </button>
-
-          <button
-            className="pos-btn"
-            onClick={() => setModalNewCustomer(true)}
-            title="Add new customer"
+    <div className="pos-neworder-container">
+      <div className="pos-flex-container">
+        {/* Cart Column */}
+        <div className="pos-cart-column">
+          <div
+            className="table-responsive vh-40"
+            style={{ overflowY: "scroll" }}
           >
-            <FaUserAlt className="pos-icon" />
-            <span>Customer Add</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleTabClick} title="View Kitchen Order Tickets">
-            <TbToolsKitchen3 className="pos-icon" />
-            KOT
-          </button>
-
-          <button className="pos-btn" onClick={handleHoldClick} title="Hold current order">
-            <BsFillPauseCircleFill className="pos-icon" />
-            <span>Hold Order</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleDropoutClick} title="Cash drop or cash out">
-            <FaHandHoldingDroplet className="pos-icon" />
-            <span>Cash Drop/Out</span>
-          </button>
-
-          <button className="pos-btn" title="Open cash drawer">
-            <RiArchiveDrawerLine className="pos-icon" />
-            <span>Open Cash Drawer</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleClosingBalance} title="View closing balance">
-            <LiaFileInvoiceSolid className="pos-icon" />
-            <span>Closing Balance</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleInvoiceClick} title="View invoice report">
-            <LiaFileInvoiceSolid className="pos-icon" />
-            <span>Invoice Report</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleCancelOrders} title="Cancel orders">
-            <LiaFileInvoiceSolid className="pos-icon" />
-            <span>Cancel Orders</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleDeliverySession} title="Delivery settlement">
-            <LiaFileInvoiceSolid className="pos-icon" />
-            <span>Delivery Settlement</span>
-          </button>
-
-          <button className="pos-btn" onClick={handleTodayorderReport} title="View settlement report">
-            <LiaFileInvoiceSolid className="pos-icon" />
-            <span>Settlement Report</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Cart Column */}
-      <div className="col-12 col-sm-12 col-md-4 col-lg-4 poscards">
-        <div
-          className="table-responsive vh-40"
-          style={{ overflowY: "scroll" }}
-        >
-          <table className="table cart-scroll">
-            <thead>
-              <tr className="thead-light">
-                <th>No.</th>
-                <th>Name</th>
-                <th>U.Price</th>
-                <th>Qty</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cart
-                ? cart.map((cartProduct, key) => (
-                  <tr key={key}>
-                    <td>{key + 1}</td>
-                    <td className="cartfoodmenuname">{cartProduct.foodmenuname}</td>
-                    <td>{cartProduct.salesprice}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <table className="table cart-scroll">
+              <thead>
+                <tr className="thead-light">
+                  <th>No.</th>
+                  <th>Name</th>
+                  <th>U.Price</th>
+                  <th>Qty</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cart
+                  ? cart.map((cartProduct, key) => (
+                    <tr key={key}>
+                      <td>{key + 1}</td>
+                      <td className="cartfoodmenuname">{cartProduct.foodmenuname}</td>
+                      <td>{cartProduct.salesprice}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDecrement(cartProduct)}
+                            style={{
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              padding: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '18px',
+                              lineHeight: '1',
+                              marginTop: '5px'
+                            }}
+                          >
+                            <FiMinus size={14} />
+                          </button>
+                          <input
+                            type="text"
+                            style={{
+                              width: "22px",
+                              height: "22px",
+                              textAlign: "center",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              padding: "0",
+                              fontSize: "14px",
+                              boxSizing: "border-box",
+                              marginTop: '-2px',
+                            }}
+                            value={cartProduct.quantity}
+                            readOnly
+                          />
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() => handleIncrement(cartProduct)}
+                            style={{
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              padding: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '18px',
+                              lineHeight: '1',
+                              marginTop: '5px'
+                            }}
+                          >
+                            <FiPlus size={14} />
+                          </button>
+                        </div>
+                      </td>
+                      <td>
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => handleDecrement(cartProduct)}
+                          onClick={() => removeProduct(cartProduct)}
                           style={{
                             borderRadius: '50%',
                             width: '20px',
@@ -1487,130 +1878,85 @@ const PosNewOrder = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontSize: '18px',
+                            fontWeight: 'bold',
                             lineHeight: '1',
                             marginTop: '5px'
                           }}
                         >
-                          <FiMinus size={14} />
+                          <FiX size={14} />
                         </button>
-                        <input
-                          type="text"
-                          style={{
-                            width: "22px",
-                            height: "22px",
-                            textAlign: "center",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                            padding: "0",
-                            fontSize: "14px",
-                            boxSizing: "border-box",
-                            marginTop: '-2px',
-                          }}
-                          value={cartProduct.quantity}
-                          readOnly
-                        />
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => handleIncrement(cartProduct)}
-                          style={{
-                            borderRadius: '50%',
-                            width: '20px',
-                            height: '20px',
-                            padding: '0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '18px',
-                            lineHeight: '1',
-                            marginTop: '5px'
-                          }}
-                        >
-                          <FiPlus size={14} />
-                        </button>
-                      </div>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => removeProduct(cartProduct)}
-                        style={{
-                          borderRadius: '50%',
-                          width: '20px',
-                          height: '20px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '18px',
-                          fontWeight: 'bold',
-                          lineHeight: '1',
-                          marginTop: '5px'
-                        }}
-                      >
-                        <FiX size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-                : "No Item in Cart"}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="table-responsive">
-          <table className="table">
-            <tbody>
-              <tr>
-                <td>Total </td>
-                <th className="text-right">{totalAmount}</th>
-              </tr>
-              <tr>
-                <td>Discount </td>
-                <th className="text-right"></th>
-              </tr>
-              <tr>
-                <td>VAT </td>
-                <th className="text-right">{vatAmount}</th>
-              </tr>
-              <tr>
-                <th>Grand Total </th>
-                <th className="text-right">{grandTotal}</th>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {options === 'Carhop' && vehicleDetails.carName && (
-          <div className="vehicle-info alert alert-info mt-2 p-2">
-            <FaCar className="mr-2" />
-            <strong>Vehicle:</strong> {vehicleDetails.carName} - {vehicleDetails.carNumber}
+                      </td>
+                    </tr>
+                  ))
+                  : "No Item in Cart"}
+              </tbody>
+            </table>
           </div>
-        )}
 
-        <div className="pos-action-wrapper">
-          <div className="pos-row">
-            <button className="pos-btns cancel-btn">Cancel</button>
-            <button onClick={handleHold} className="pos-btns hold-btn">Hold</button>
-            <button
-              onClick={handleQuickPay}
-              className="pos-btns quickpay-btn"
-              disabled={loadingQuickPay}
-            >
-              {loadingQuickPay ? "Processing..." : "Quick Pay ›"}
-            </button>
+          <div className="table-responsive">
+            <table className="table">
+              <tbody>
+                <tr>
+                  <td>Total</td>
+                  <th className="text-right">{totalAmount}</th>
+                </tr>
+                <tr>
+                  <td>Discount</td>
+                  <th className="text-right"></th>
+                </tr>
+                <tr>
+                  <td>VAT</td>
+                  <th className="text-right">{vatAmount}</th>
+                </tr>
+                <tr>
+                  <th>Grand Total</th>
+                  <th className="text-right">{grandTotal}</th>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div className="pos-row">
-            <button className="pos-btns ebill-btn">E-Bill</button>
-            <button
-              onClick={handlePlaceorder}
-              className="pos-btns placeorder-btn"
-              disabled={loadingPlaceOrder}
-            >
-              {loadingPlaceOrder ? "Placing Order..." : "Place Order"}
-            </button>
+
+          {options === 'Carhop' && vehicleDetails.carName && (
+            <div className="vehicle-info alert alert-info mt-2 p-2">
+              <FaCar className="mr-2" />
+              <strong>Vehicle:</strong> {vehicleDetails.carName} - {vehicleDetails.carNumber}
+            </div>
+          )}
+
+          {options === 'Delivery' && selectCustomer && (
+            <div className="customer-info alert alert-primary mt-2 p-2">
+              <FaUserAlt className="mr-2" />
+              <strong>{selectCustomer.customername}</strong>
+              {selectDelivery && (
+                <> | <MdDeliveryDining /> {selectDelivery.firstname}</>
+              )}
+            </div>
+          )}
+
+          <div className="pos-action-wrapper">
+            <div className="pos-row">
+              <button className="pos-btns cancel-btn">Cancel</button>
+              <button onClick={handleHold} className="pos-btns hold-btn">Hold</button>
+              <button
+                onClick={handleQuickPay}
+                className="pos-btns quickpay-btn"
+                disabled={loadingQuickPay}
+              >
+                {loadingQuickPay ? "Processing..." : "Quick Pay ›"}
+              </button>
+            </div>
+            <div className="pos-row">
+              <button className="pos-btns ebill-btn">E-Bill</button>
+              <button
+                onClick={handlePlaceorder}
+                className="pos-btns placeorder-btn"
+                disabled={loadingPlaceOrder}
+              >
+                {loadingPlaceOrder ? "Placing Order..." : "Place Order"}
+              </button>
+            </div>
           </div>
-        </div>
-         <div className="datetime-display border-bottom d-flex justify-content-between align-items-center">
+          <div className="datetime-display border-bottom d-flex justify-content-between align-items-center">
             <div className="current-time">
               <FaClock className="mr-2" />
               <span>{currentDateTime.toLocaleTimeString()}</span>
@@ -1626,19 +1972,81 @@ const PosNewOrder = () => {
               })}</span>
             </div>
           </div>
-      </div>
+        </div>
 
-      {/* Main Content Column */}
-      <div className="col-12 col-sm-12 col-md-5 col-lg-7">
-        <div className="poscards">
-          <div className="tbl-h">
-            {/* <ul className="nav nav-tabs nav-justified" role="tablist">
+        {/* Menu Buttons Column */}
+        <div className="pos-menu-column">
+          <div className="pos-menu">
+            <button className="pos-btn active" onClick={handleClearClick} title="Clear all items">
+              <FaHistory className="pos-icon" />
+              Clear
+            </button>
 
-            </ul> */}
+            <button
+              className="pos-btn"
+              onClick={() => setModalNewCustomer(true)}
+              title="Add new customer"
+            >
+              <FaUserAlt className="pos-icon" />
+              <span>Customer Add</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleTabClick} title="View Kitchen Order Tickets">
+              <TbToolsKitchen3 className="pos-icon" />
+              KOT
+            </button>
+
+            <button className="pos-btn" onClick={handleHoldClick} title="Hold current order">
+              <BsFillPauseCircleFill className="pos-icon" />
+              <span>Hold Order</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleDropoutClick} title="Cash drop or cash out">
+              <FaHandHoldingDroplet className="pos-icon" />
+              <span>Cash Drop/Out</span>
+            </button>
+
+            <button className="pos-btn" title="Open cash drawer">
+              <RiArchiveDrawerLine className="pos-icon" />
+              <span>Open Cash Drawer</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleClosingBalance} title="View closing balance">
+              <LiaFileInvoiceSolid className="pos-icon" />
+              <span>Closing Balance</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleInvoiceClick} title="View invoice report">
+              <LiaFileInvoiceSolid className="pos-icon" />
+              <span>Invoice Report</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleCancelOrders} title="Cancel orders">
+              <LiaFileInvoiceSolid className="pos-icon" />
+              <span>Cancel Orders</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleDeliverySession} title="Delivery settlement">
+              <LiaFileInvoiceSolid className="pos-icon" />
+              <span>Delivery Settlement</span>
+            </button>
+
+            <button className="pos-btn" onClick={handleTodayorderReport} title="View settlement report">
+              <LiaFileInvoiceSolid className="pos-icon" />
+              <span>Settlement Report</span>
+            </button>
           </div>
+        </div>
 
-          <div className="tab-content" style={{ overflowY: 'scroll' }}>
-            {getCurrentTabContent()}
+        {/* Main Content Column */}
+        <div className="pos-content-column">
+          <div className="poscards">
+            <div className="tbl-h">
+            </div>
+
+            <div className="tab-content" style={{ overflowY: 'scroll' }}>
+              {getCurrentTabContent()}
+            </div>
           </div>
         </div>
       </div>
@@ -1690,186 +2098,66 @@ const PosNewOrder = () => {
         onCustomerAdded={fetchCustomers}
       />
 
-      {/* Print Modal */}
+      {/* Thermal Printer Print Modal */}
       {showPrintModal && (
         <>
-          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" role="dialog">
-            <div className="modal-dialog modal-lg" role="document">
-              <div className="modal-content">
-                <div className="modal-header bg-primary text-white">
-                  <h5 className="modal-title">
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }} tabIndex="-1" role="dialog">
+            <div className="modal-dialog modal-sm" role="document" style={{ maxWidth: '320px', marginTop: '50px' }}>
+              <div className="modal-content" style={{ borderRadius: '8px' }}>
+                <div className="modal-header bg-primary text-white" style={{ padding: '10px 15px' }}>
+                  <h5 className="modal-title" style={{ fontSize: '16px' }}>
                     <i className="fas fa-print mr-2"></i>
                     Print Preview
                   </h5>
                   <button
                     type="button"
                     className="close text-white"
-                    onClick={() => setShowPrintModal(false)}
+                    onClick={() => {
+                      setShowPrintModal(false);
+                      handleClearClick();
+                    }}
+                    style={{ opacity: 1 }}
                   >
                     <span>&times;</span>
                   </button>
                 </div>
-                <div className="modal-body p-4" ref={componentRef}>
-                  <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '300px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                      <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>RESTAURANT NAME</h3>
-                      <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 1</p>
-                      <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 2</p>
-                      <p style={{ margin: '0', fontSize: '12px' }}>Phone: +1234567890</p>
-                      <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Order No:</span>
-                        <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
-                      </div>
-                      {orderData?.billnumber && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                          <span>Bill No:</span>
-                          <span style={{ fontWeight: 'bold' }}>{orderData.billnumber}</span>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Date:</span>
-                        <span>{new Date(orderData?.date || Date.now()).toLocaleDateString()}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Time:</span>
-                        <span>{new Date(orderData?.date || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span>Type:</span>
-                        <span>{orderData?.options || 'N/A'}</span>
-                      </div>
-                      {orderData?.options === 'Carhop' && orderData?.vehicle && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                          <span>Vehicle:</span>
-                          <span style={{ fontWeight: 'bold' }}>
-                            {orderData.vehicle.carName} - {orderData.vehicle.carNumber}
-                          </span>
-                        </div>
-                      )}
-                      <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        marginBottom: '5px',
-                        borderBottom: '1px solid #000',
-                        paddingBottom: '5px'
-                      }}>
-                        <div>ITEM</div>
-                        <div style={{ textAlign: 'center' }}>QTY</div>
-                        <div style={{ textAlign: 'right' }}>AMOUNT</div>
-                      </div>
-
-                      {orderData?.cart?.map((item, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 1fr',
-                            fontSize: '12px',
-                            marginBottom: '3px'
-                          }}
-                        >
-                          <div style={{ wordBreak: 'break-word' }}>{item.foodmenuname}</div>
-                          <div style={{ textAlign: 'center' }}>{item.quantity}</div>
-                          <div style={{ textAlign: 'right' }}>{(item.quantity * item.salesprice).toFixed(2)}</div>
-                        </div>
-                      ))}
-
-                      <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-                    </div>
-
-                    <div style={{ fontSize: '12px' }}>
-                      {(() => {
-                        const subtotal = orderData?.cart?.reduce((sum, item) =>
-                          sum + (item.quantity * item.salesprice), 0) || 0;
-                        const vatPercentValue = 5;
-                        const vatAmounts = (subtotal * vatPercentValue) / 100;
-                        const fixedsubtotal = subtotal - vatAmounts;
-                        const overallTotal = fixedsubtotal + vatAmounts;
-
-                        return (
-                          <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                              <span>Sub Total:</span>
-                              <span>{fixedsubtotal.toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                              <span>VAT Amount:</span>
-                              <span>{vatAmounts.toFixed(2)}</span>
-                            </div>
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              marginBottom: '10px',
-                              fontSize: '11px',
-                              color: '#666',
-                              fontStyle: 'italic'
-                            }}>
-                              <span>(VAT @ {vatPercentValue}%):</span>
-                              <span>{(subtotal * vatPercentValue / 100).toFixed(2)}</span>
-                            </div>
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              fontWeight: 'bold',
-                              fontSize: '14px',
-                              marginTop: '10px',
-                              paddingTop: '5px',
-                              borderTop: '2px solid #000'
-                            }}>
-                              <span>Overall Total:</span>
-                              <span>{overallTotal.toFixed(2)}</span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-
-                    <div style={{
-                      textAlign: 'center',
-                      marginTop: '20px',
-                      fontSize: '11px',
-                      borderTop: '1px dashed #000',
-                      paddingTop: '10px'
-                    }}>
-                      <p style={{ margin: '5px 0' }}>Thank you for dining with us!</p>
-                      <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Please visit again</p>
-                      <p style={{ margin: '5px 0' }}>*** Have a nice day ***</p>
-                    </div>
-                  </div>
+                <div className="modal-body p-0" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                  <ThermalPrintComponent
+                    ref={componentRef}
+                    orderData={orderData}
+                    restaurantInfo={{
+                      name: "TAHA Cafeteria",
+                      address: "Electra street - opposite NMC",
+                      city: "Al Danah - Zone 1 - Abu Dhabi",
+                      phone: "02 632 8382",
+                      vatNumber: "100123456789",
+                      footer: "Thank you for dining with us!"
+                    }}
+                  />
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer" style={{ padding: '10px', justifyContent: 'space-between' }}>
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary btn-sm"
                     onClick={() => {
                       setShowPrintModal(false);
                       handleClearClick();
                     }}
                   >
-                    <i className="fas fa-times mr-1"></i> Close
+                    Close
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary"
-                    onClick={handlePrints}
+                    className="btn btn-primary btn-sm"
+                    onClick={handleThermalPrint}
                   >
-                    <i className="fas fa-print mr-1"></i> Print Receipt
+                    <i className="fas fa-print mr-1"></i> Print
                   </button>
                 </div>
               </div>
             </div>
           </div>
-          <div className="modal-backdrop fade show"></div>
+          <div className="modal-backdrop fade show" style={{ zIndex: 9998 }}></div>
         </>
       )}
     </div>

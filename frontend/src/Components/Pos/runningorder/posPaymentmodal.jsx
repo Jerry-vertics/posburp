@@ -5,6 +5,217 @@ import { useNavigate } from "react-router-dom";
 import { useReactToPrint } from 'react-to-print';
 import apiConfig from '../../layouts/base_url';
 
+// Thermal Printer Component for Receipt
+const ThermalReceiptComponent = React.forwardRef(({ orderData, restaurantInfo = {} }, ref) => {
+  const defaultRestaurant = {
+    name: "TAHA Cafeteria",
+    address: "Electra street - opposite NMC",
+    city: "Al Danah - Zone 1 - Abu Dhabi",
+    phone: "02 632 8382",
+    vatNumber: "100123456789",
+    footer: "Thank you for dining with us!"
+  };
+
+  const restaurant = { ...defaultRestaurant, ...restaurantInfo };
+
+  // Safe number conversion
+  const safeToNumber = (value) => {
+    if (value === null || value === undefined) return 0;
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+  };
+
+  // Calculate totals
+  const subtotal = orderData?.cart?.reduce((sum, item) =>
+    sum + (safeToNumber(item.quantity) * safeToNumber(item.salesprice)), 0) || 0;
+  const vatPercent = 5;
+  const vatAmount = (subtotal * vatPercent) / 100;
+  const netTotal = subtotal - vatAmount;
+  const grandTotal = subtotal;
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  };
+
+  const formatPrice = (price) => {
+    const num = safeToNumber(price);
+    return num.toFixed(2);
+  };
+
+  const thermalStyles = {
+    container: {
+      fontFamily: "'Courier New', 'Fira Code', monospace",
+      fontSize: '11px',
+      lineHeight: '1.3',
+      width: '280px',
+      maxWidth: '100%',
+      margin: '0 auto',
+      padding: '8px 4px',
+      backgroundColor: 'white',
+      color: 'black'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '8px',
+      paddingBottom: '5px',
+      borderBottom: '1px dashed #000'
+    },
+    restaurantName: {
+      fontSize: '14px',
+      fontWeight: 'bold',
+      margin: '0 0 3px 0',
+      letterSpacing: '1px'
+    },
+    divider: {
+      borderTop: '1px dashed #000',
+      margin: '5px 0'
+    },
+    dividerDouble: {
+      borderTop: '2px solid #000',
+      margin: '5px 0'
+    },
+    row: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px'
+    },
+    itemRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '2px',
+      fontSize: '10px'
+    },
+    itemName: {
+      flex: 3,
+      wordBreak: 'break-word',
+      paddingRight: '6px'
+    },
+    itemQty: {
+      flex: 1,
+      textAlign: 'center'
+    },
+    itemPrice: {
+      flex: 1.5,
+      textAlign: 'right'
+    },
+    totalRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontWeight: 'bold',
+      marginTop: '5px',
+      paddingTop: '5px'
+    },
+    footer: {
+      textAlign: 'center',
+      marginTop: '10px',
+      paddingTop: '8px',
+      borderTop: '1px dashed #000',
+      fontSize: '9px'
+    }
+  };
+
+  return (
+    <div ref={ref} style={thermalStyles.container}>
+      <div style={thermalStyles.header}>
+        <div style={thermalStyles.restaurantName}>{restaurant.name}</div>
+        <div style={{ fontSize: '9px', margin: '2px 0' }}>{restaurant.address}</div>
+        <div style={{ fontSize: '9px' }}>{restaurant.city}</div>
+        <div style={{ fontSize: '9px' }}>Tel: {restaurant.phone}</div>
+        {restaurant.vatNumber && (
+          <div style={{ fontSize: '8px' }}>VAT: {restaurant.vatNumber}</div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <div style={thermalStyles.row}>
+          <span>Order #:</span>
+          <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
+        </div>
+        {orderData?.billnumber && (
+          <div style={thermalStyles.row}>
+            <span>Bill #:</span>
+            <span>{orderData.billnumber}</span>
+          </div>
+        )}
+        <div style={thermalStyles.row}>
+          <span>Date:</span>
+          <span>{formatDate(orderData?.date || Date.now())}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>Payment:</span>
+          <span>{orderData?.paymentType || 'N/A'}</span>
+        </div>
+        {orderData?.tableDetails?.tablename && (
+          <div style={thermalStyles.row}>
+            <span>Table:</span>
+            <span>{orderData.tableDetails.tablename}</span>
+          </div>
+        )}
+        {orderData?.waiterDetails && (
+          <div style={thermalStyles.row}>
+            <span>Waiter:</span>
+            <span>{orderData.waiterDetails.firstname} {orderData.waiterDetails.lastname}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ ...thermalStyles.row, fontWeight: 'bold', marginBottom: '4px' }}>
+        <span style={{ flex: 3 }}>ITEM</span>
+        <span style={{ flex: 1, textAlign: 'center' }}>QTY</span>
+        <span style={{ flex: 1.5, textAlign: 'right' }}>TOTAL</span>
+      </div>
+
+      {orderData?.cart?.map((item, index) => {
+        const quantity = safeToNumber(item.quantity);
+        const price = safeToNumber(item.salesprice);
+        const total = quantity * price;
+        const itemName = item.menuItemDetails?.foodmenuname || item.foodmenuname || 'N/A';
+
+        return (
+          <div key={index} style={thermalStyles.itemRow}>
+            <span style={thermalStyles.itemName}>{itemName}</span>
+            <span style={thermalStyles.itemQty}>x{quantity}</span>
+            <span style={thermalStyles.itemPrice}>{formatPrice(total)}</span>
+          </div>
+        );
+      })}
+
+      <div style={thermalStyles.divider} />
+
+      <div style={{ marginTop: '5px' }}>
+        <div style={thermalStyles.row}>
+          <span>Subtotal:</span>
+          <span>{formatPrice(netTotal)}</span>
+        </div>
+        <div style={thermalStyles.row}>
+          <span>VAT ({vatPercent}%):</span>
+          <span>{formatPrice(vatAmount)}</span>
+        </div>
+        <div style={{ ...thermalStyles.row, ...thermalStyles.totalRow }}>
+          <span style={{ fontSize: '12px' }}>GRAND TOTAL:</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{formatPrice(grandTotal)} AED</span>
+        </div>
+      </div>
+
+      <div style={thermalStyles.dividerDouble} />
+
+      <div style={thermalStyles.footer}>
+        <div style={{ fontWeight: 'bold', marginBottom: '3px' }}>{restaurant.footer}</div>
+        <div style={{ fontSize: '8px', marginTop: '3px' }}>Please visit again!</div>
+        <div style={{ fontSize: '8px', marginTop: '3px' }}>*** Have a nice day ***</div>
+        <div style={{ fontSize: '7px', marginTop: '5px', letterSpacing: '1px' }}>
+          {Array(24).fill('=').join('')}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ThermalReceiptComponent.displayName = 'ThermalReceiptComponent';
+
 const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
   const navigate = useNavigate();
   const [payments, setPays] = useState('');
@@ -71,6 +282,45 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
   const formatPrice = (price) => {
     const num = safeToNumber(price);
     return num.toFixed(2);
+  };
+
+  // Thermal printer print function
+  const handleThermalPrint = () => {
+    if (componentRef.current) {
+      const printContent = componentRef.current.innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print Receipt</title>
+            <style>
+              @page {
+                size: 58mm auto;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Courier New', monospace;
+              }
+              @media print {
+                body { margin: 0; padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+            <script>
+              window.onload = function() {
+                window.print();
+                window.close();
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   };
 
   // Handle payment submission
@@ -156,7 +406,6 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
       confirmButtonText: 'Yes, close table'
     }).then(async (result) => {
       if (result.isConfirmed) {
-        // Show loading state
         Swal.fire({
           title: 'Processing...',
           text: 'Please wait while we close the table',
@@ -203,17 +452,6 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
     setShowPaymentSection(true);
   }
 
-  // Print functionality
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    onAfterPrint: () => {
-      navigate('/runningorder');
-      setShowPrintModal(false);
-    },
-    documentTitle: `Order_${orderData?.ordernumber || 'Receipt'}`,
-    removeAfterPrint: true
-  });
-
   // Close modal
   const closeModal = () => {
     setShowModal(false);
@@ -228,27 +466,6 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
     navigate('/runningorder');
   };
 
-  // Calculate totals for print
-  const calculateTotals = () => {
-    if (!orderData?.cart) return { subtotal: 0, vatAmount: 0, grandTotal: 0 };
-
-    const subtotal = orderData.cart.reduce((sum, item) => {
-      const quantity = safeToNumber(item.quantity);
-      const salesprice = safeToNumber(item.salesprice);
-      return sum + (quantity * salesprice);
-    }, 0);
-
-    const vatPercent = 5;
-    const vatAmount = (subtotal * vatPercent) / 100;
-    const grandTotal = subtotal;
-
-    return {
-      subtotal,
-      vatAmount,
-      grandTotal
-    };
-  };
-
   // Render order details
   const renderOrderDetails = (order) => {
     const subtotal = order.cart.reduce((total, cartItem) => {
@@ -257,7 +474,6 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
       return total + (quantity * salesprice);
     }, 0);
 
-    console.log('Order Response...',order);
     const vatPercent = 5;
     const vatAmount = (subtotal * vatPercent) / 100;
     const grandTotal = subtotal;
@@ -281,34 +497,36 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
           </div>
         </div>
 
-        <table className="table table-bordered table-sm">
-          <thead className="thead-dark">
-            <tr>
-              <th>#</th>
-              <th>Food Name</th>
-              <th className="text-center">Qty</th>
-              <th className="text-right">Unit Price</th>
-              <th className="text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.cart.map((cartItem, index) => {
-              const quantity = safeToNumber(cartItem.quantity);
-              const salesprice = safeToNumber(cartItem.salesprice);
-              const total = quantity * salesprice;
+        <div className="table-responsive">
+          <table className="table table-bordered table-sm">
+            <thead className="thead-dark">
+              <tr>
+                <th>#</th>
+                <th>Food Name</th>
+                <th className="text-center">Qty</th>
+                <th className="text-right">Unit Price</th>
+                <th className="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.cart.map((cartItem, index) => {
+                const quantity = safeToNumber(cartItem.quantity);
+                const salesprice = safeToNumber(cartItem.salesprice);
+                const total = quantity * salesprice;
 
-              return (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-                  <td>{cartItem.menuItemDetails?.foodmenuname || cartItem.foodmenuname}</td>
-                  <td className="text-center">{quantity}</td>
-                  <td className="text-right">{formatPrice(salesprice)}</td>
-                  <td className="text-right">{formatPrice(total)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>{cartItem.menuItemDetails?.foodmenuname || cartItem.foodmenuname}</td>
+                    <td className="text-center">{quantity}</td>
+                    <td className="text-right">{formatPrice(salesprice)}</td>
+                    <td className="text-right">{formatPrice(total)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+           </table>
+        </div>
 
         <div className="row mt-3">
           <div className="col-md-6 offset-md-6">
@@ -316,7 +534,7 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
               <div className="card-body">
                 <div className="d-flex justify-content-between mb-2">
                   <span>Subtotal:</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span>{formatPrice(subtotal - vatAmount)}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span>VAT ({vatPercent}%):</span>
@@ -334,17 +552,17 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
         {/* Action Buttons */}
         <div className="row mt-4">
           <div className="col-12 text-center">
-           {order.tableDetails?.tablename && order.orderTable?.orderstatus !== "Complete" && (
-  <button
-    type="button"
-    className="btn btn-secondary mr-3"
-    onClick={() => handleCloseTable(order._id, order)}
-    style={{ minWidth: '120px' }}
-  >
-    <i className="fas fa-times-circle mr-2"></i>
-    Close Table
-  </button>
-)}
+            {order.tableDetails?.tablename && order.orderTable?.orderstatus !== "Complete" && (
+              <button
+                type="button"
+                className="btn btn-secondary mr-3"
+                onClick={() => handleCloseTable(order._id, order)}
+                style={{ minWidth: '120px' }}
+              >
+                <i className="fas fa-times-circle mr-2"></i>
+                Close Table
+              </button>
+            )}
 
             <button
               type="button"
@@ -411,126 +629,6 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
     );
   };
 
-  // Print receipt template
-  const renderPrintTemplate = () => {
-    const totals = calculateTotals();
-
-    return (
-      <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '300px', margin: '0 auto' }} ref={componentRef}>
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>RESTAURANT NAME</h3>
-          <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 1</p>
-          <p style={{ margin: '0', fontSize: '12px' }}>Restaurant Address Line 2</p>
-          <p style={{ margin: '0', fontSize: '12px' }}>Phone: +1234567890</p>
-          <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span>Order No:</span>
-            <span style={{ fontWeight: 'bold' }}>{orderData?.ordernumber || 'N/A'}</span>
-          </div>
-          {orderData?.billnumber && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-              <span>Bill No:</span>
-              <span style={{ fontWeight: 'bold' }}>{orderData.billnumber}</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span>Date:</span>
-            <span>{new Date(orderData?.date || Date.now()).toLocaleDateString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span>Time:</span>
-            <span>{new Date(orderData?.date || Date.now()).toLocaleTimeString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span>Type:</span>
-            <span>{orderData?.options || 'Dine In'}</span>
-          </div>
-          <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr 1fr',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            marginBottom: '5px',
-            borderBottom: '1px solid #000',
-            paddingBottom: '5px'
-          }}>
-            <div>ITEM</div>
-            <div style={{ textAlign: 'center' }}>QTY</div>
-            <div style={{ textAlign: 'right' }}>AMOUNT</div>
-          </div>
-
-          {orderData?.cart?.map((item, index) => {
-            const quantity = safeToNumber(item.quantity);
-            const salesprice = safeToNumber(item.salesprice);
-            const amount = quantity * salesprice;
-
-            return (
-              <div
-                key={index}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr',
-                  fontSize: '12px',
-                  marginBottom: '3px'
-                }}
-              >
-                <div style={{ wordBreak: 'break-word' }}>{item.foodmenuname}</div>
-                <div style={{ textAlign: 'center' }}>{quantity}</div>
-                <div style={{ textAlign: 'right' }}>{formatPrice(amount)}</div>
-              </div>
-            );
-          })}
-
-          <hr style={{ margin: '10px 0', borderColor: '#000' }} />
-        </div>
-
-        <div style={{ fontSize: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>Sub Total:</span>
-            <span>{formatPrice(totals.subtotal)}</span>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>VAT Amount (5%):</span>
-            <span>{formatPrice(totals.vatAmount)}</span>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            marginTop: '10px',
-            paddingTop: '5px',
-            borderTop: '2px solid #000'
-          }}>
-            <span>Grand Total:</span>
-            <span>{formatPrice(totals.grandTotal)}</span>
-          </div>
-        </div>
-
-        <div style={{
-          textAlign: 'center',
-          marginTop: '20px',
-          fontSize: '11px',
-          borderTop: '1px dashed #000',
-          paddingTop: '10px'
-        }}>
-          <p style={{ margin: '5px 0' }}>Thank you for dining with us!</p>
-          <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Please visit again</p>
-          <p style={{ margin: '5px 0' }}>*** Have a nice day ***</p>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       {/* Payment Modal */}
@@ -560,48 +658,60 @@ const RunningPaymentModal = ({ data, showModal, setShowModal }) => {
         </div>
       </div>
 
-      {/* Print Preview Modal */}
+      {/* Thermal Printer Print Modal */}
       {showPrintModal && (
         <>
           <div
             className="modal fade show"
-            style={{ display: 'block' }}
+            style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
             tabIndex="-1"
             role="dialog"
             onClick={(e) => e.target === e.currentTarget && setShowPrintModal(false)}
           >
-            <div className="modal-dialog modal-lg" role="document">
-              <div className="modal-content">
-                <div className="modal-header bg-primary text-white">
-                  <h5 className="modal-title">
+            <div className="modal-dialog modal-sm" role="document" style={{ maxWidth: '320px' }}>
+              <div className="modal-content" style={{ borderRadius: '8px' }}>
+                <div className="modal-header bg-primary text-white" style={{ padding: '10px 15px' }}>
+                  <h5 className="modal-title" style={{ fontSize: '16px' }}>
                     <i className="fas fa-print mr-2"></i>
-                    Print Preview
+                    Print Receipt
                   </h5>
                   <button
                     type="button"
                     className="close text-white"
                     onClick={() => setShowPrintModal(false)}
+                    style={{ opacity: 1 }}
                   >
                     <span>&times;</span>
                   </button>
                 </div>
-                <div className="modal-body p-4">
-                  {renderPrintTemplate()}
+                <div className="modal-body p-0" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                  <ThermalReceiptComponent
+                    ref={componentRef}
+                    orderData={orderData || printData}
+                    restaurantInfo={{
+                      name: "TAHA Cafeteria",
+                      address: "Electra street - opposite NMC",
+                      city: "Al Danah - Zone 1 - Abu Dhabi",
+                      phone: "02 632 8382",
+                      vatNumber: "100123456789",
+                      footer: "Thank you for dining with us!"
+                    }}
+                  />
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer" style={{ padding: '10px', justifyContent: 'space-between' }}>
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary btn-sm"
                     onClick={() => setShowPrintModal(false)}
                   >
                     <i className="fas fa-times mr-1"></i> Close
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary"
-                    onClick={handlePrint}
+                    className="btn btn-primary btn-sm"
+                    onClick={handleThermalPrint}
                   >
-                    <i className="fas fa-print mr-1"></i> Print Receipt
+                    <i className="fas fa-print mr-1"></i> Print
                   </button>
                 </div>
               </div>
